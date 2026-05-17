@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#0B0B0B"/>
+<meta name="description" content="A place to set it down. Anonymous. No account. No trace."/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="VENT"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icons/icon-192.png"/>
+<title>VENT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    height: 100%;
+    background: #0B0B0B;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    height: 100%;
+    background: #0B0B0B;
+    font-family: "Manrope", system-ui, sans-serif;
+    color: rgba(255,255,255,0.94);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+  }
+
+  #root {
+    position: fixed;
+    inset: 0;
+    /* push content away from notch / home indicator */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    overflow: hidden;
+  }
+
+  /* Hide scrollbars inside screens — native feel */
+  ::-webkit-scrollbar { width: 0; height: 0; }
+  textarea::-webkit-scrollbar { width: 4px; }
+  textarea::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+  /* Prevent pull-to-refresh on mobile */
+  html, body { overscroll-behavior-y: none; }
+
+  @keyframes ventFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes ventRise {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes ventBloom {
+    0%   { opacity: 0; transform: scale(0.6); }
+    70%  { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes ventSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes ventPulse {
+    0%, 100% { transform: scale(1);   opacity: 0.55; }
+    50%      { transform: scale(1.18); opacity: 0.9;  }
+  }
+  @keyframes ventDrift {
+    from { transform: translate(0, 0); }
+    to   { transform: translate(40%, -10%); }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+<!-- ── emotion data ── -->
+<script>
+(function () {
+  const F = {
+    anger:    { id: 'anger',    label: 'Anger',          hue: 12  },
+    fear:     { id: 'fear',     label: 'Fear & Anxiety', hue: 45  },
+    sad:      { id: 'sad',      label: 'Sadness',        hue: 245 },
+    shame:    { id: 'shame',    label: 'Shame & Regret', hue: 330 },
+    disgust:  { id: 'disgust',  label: 'Aversion',       hue: 90  },
+    surprise: { id: 'surprise', label: 'Surprise',       hue: 200 },
+    curious:  { id: 'curious',  label: 'Curiosity',      hue: 175 },
+    joy:      { id: 'joy',      label: 'Joy',            hue: 75  },
+    love:     { id: 'love',     label: 'Love',           hue: 350 },
+    peace:    { id: 'peace',    label: 'Peace & Trust',  hue: 145 },
+  };
+  window.VENT_FAMILIES = F;
+
+  const E = (label, family, hint) => ({ key: label.toLowerCase(), label, family: family.id, hue: family.hue, hint });
+
+  window.VENT_EMOTIONS = [
+    E('Anger',         F.anger,    'hot, sharp'),
+    E('Rage',          F.anger,    'about to detonate'),
+    E('Aggravation',   F.anger,    'grinding, abrasive'),
+    E('Annoyance',     F.anger,    'a small splinter'),
+    E('Irritation',    F.anger,    'a low buzz under everything'),
+    E('Frustration',   F.anger,    'stuck, blocked, pushing'),
+    E('Exasperation',  F.anger,    'at the end of patience'),
+    E('Resentment',    F.anger,    'old, swallowed, kept'),
+    E('Contempt',      F.anger,    'looking down, refusing'),
+    E('Fear',          F.fear,     'something is wrong'),
+    E('Anxiety',       F.fear,     'tight chest, spinning'),
+    E('Apprehension',  F.fear,     'expecting impact'),
+    E('Nervousness',   F.fear,     'jittery, shallow'),
+    E('Panic',         F.fear,     'no air, no ground'),
+    E('Terror',        F.fear,     'frozen, total'),
+    E('Horror',        F.fear,     'witnessing the unbearable'),
+    E('Worry',         F.fear,     'rehearsing the worst'),
+    E('Insecurity',    F.fear,     'not enough, too much'),
+    E('Uncertainty',   F.fear,     "can't see what's next"),
+    E('Sadness',       F.sad,      'heavy, low'),
+    E('Sorrow',        F.sad,      'deep, slow'),
+    E('Grief',         F.sad,      'something is gone'),
+    E('Melancholy',    F.sad,      'soft and long'),
+    E('Depression',    F.sad,      'flat, weighted, dim'),
+    E('Despair',       F.sad,      'no door anywhere'),
+    E('Defeat',        F.sad,      'put down by it'),
+    E('Devastation',   F.sad,      'levelled'),
+    E('Disappointment',F.sad,      'it was not what you hoped'),
+    E('Loneliness',    F.sad,      'unseen, no one near'),
+    E('Isolation',     F.sad,      'apart, walled off'),
+    E('Rejection',     F.sad,      'pushed away'),
+    E('Yearning',      F.sad,      'pulled toward what is missing'),
+    E('Nostalgia',     F.sad,      'an ache for then'),
+    E('Exhaustion',    F.sad,      'empty tank, no reserve'),
+    E('Shame',         F.shame,    'small, wanting to vanish'),
+    E('Guilt',         F.shame,    'something I did or did not do'),
+    E('Embarrassment', F.shame,    'flushed, exposed'),
+    E('Humiliation',   F.shame,    'made small by another'),
+    E('Regret',        F.shame,    'the path not taken'),
+    E('Powerlessness', F.shame,    'no lever, no grip'),
+    E('Resignation',   F.shame,    'okay, fine, whatever'),
+    E('Disgust',       F.disgust,  "I don't want this near me"),
+    E('Envy',          F.disgust,  'wanting what is theirs'),
+    E('Jealousy',      F.disgust,  'afraid of losing them'),
+    E('Boredom',       F.disgust,  'nothing is reaching me'),
+    E('Surprise',      F.surprise, 'unexpected'),
+    E('Shock',         F.surprise, 'system jolt'),
+    E('Astonishment',  F.surprise, 'mouth open, stalled'),
+    E('Disbelief',     F.surprise, "it can't be real"),
+    E('Bewilderment',  F.surprise, 'nothing matches up'),
+    E('Amazement',     F.surprise, 'caught off guard, in awe'),
+    E('Confusion',     F.surprise, 'wires crossed'),
+    E('Curiosity',     F.curious,  'wanting to know'),
+    E('Contemplation', F.curious,  'sitting with it'),
+    E('Fascination',   F.curious,  'pulled toward, slow'),
+    E('Wonder',        F.curious,  'open and lit up'),
+    E('Anticipation',  F.curious,  'leaning forward'),
+    E('Eagerness',     F.curious,  'ready, almost twitching'),
+    E('Impatience',    F.curious,  'wanting it now'),
+    E('Joy',           F.joy,      'lifted, light'),
+    E('Happiness',     F.joy,      'easy, full'),
+    E('Bliss',         F.joy,      'soft, vast'),
+    E('Delight',       F.joy,      'tickled, charmed'),
+    E('Ecstasy',       F.joy,      'beyond the rim'),
+    E('Excitement',    F.joy,      'fizzing'),
+    E('Enthusiasm',    F.joy,      'lit and going'),
+    E('Triumph',       F.joy,      'won, on top'),
+    E('Zeal',          F.joy,      'fired up, ready, charged'),
+    E('Love',          F.love,     'opened toward someone'),
+    E('Infatuation',   F.love,     'consumed, early'),
+    E('Admiration',    F.love,     'lifted by them'),
+    E('Awe',           F.love,     'small and humbled'),
+    E('Peace',         F.peace,    'still, settled'),
+    E('Calm',          F.peace,    'level, breathing'),
+    E('Acceptance',    F.peace,    'this is what is'),
+    E('Relief',        F.peace,    'the pressure lifted'),
+    E('Trust',         F.peace,    'safe enough to lean'),
+    E('Hope',          F.peace,    'a small light forward'),
+    E('Empathy',       F.peace,    'feeling with them'),
+    E('Sympathy',      F.peace,    'wishing them softness'),
+    E('Gratitude',     F.peace,    'lucky, full'),
+    E('Pride',         F.peace,    'standing taller'),
+    E('Satisfaction',  F.peace,    'enough, just so'),
+    E('Fulfillment',   F.peace,    'this is what it is for'),
+  ];
+
+  window.VENT_RESOURCES = [
+    { name: '988 Suicide & Crisis Lifeline', detail: 'Call or text 988 · 24/7',   tag: 'US' },
+    { name: 'Crisis Text Line',              detail: 'Text HOME to 741741',        tag: 'US / CA / UK / IE' },
+    { name: 'Samaritans',                    detail: 'Call 116 123',               tag: 'UK / IE' },
+    { name: 'Lifeline Australia',            detail: 'Call 13 11 14',              tag: 'AU' },
+    { name: 'Find a local helpline',         detail: 'findahelpline.com',          tag: 'Worldwide' },
+  ];
+
+  window.VENT_PROMPTS = [
+    "Your feelings matter. We're here, listening.",
+    "Nothing here is logged to you. Say what's true.",
+    "Start anywhere. The first sentence is the hardest.",
+    "Type it raw. No one is grading this.",
+    "Let it out. We'll keep it.",
+  ];
+})();
+</script>
+
+<!-- ── app ── -->
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo } = React;
+
+// ─── theme ───────────────────────────────────────────────
+const THEME = {
+  accent:   '#F47B20',
+  accentDim:'#F47B20cc',
+  bg:       '#0B0B0B',
+  surface:  '#161616',
+  surface2: '#1f1f1f',
+  text:     'rgba(255,255,255,0.94)',
+  muted:    'rgba(255,255,255,0.48)',
+  line:     'rgba(255,255,255,0.08)',
+};
+window.VENT_THEME = THEME;
+
+// ─── primitives ──────────────────────────────────────────
+
+function VentWordmark({ size = 48, tag = true, tagSpacing = 8 }) {
+  const t = THEME;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1 }}>
+      <div style={{ fontFamily: '"Anton", system-ui, sans-serif', fontSize: size, letterSpacing: '0.02em', fontWeight: 400, display: 'flex' }}>
+        <span style={{ color: '#fff' }}>V</span>
+        <span style={{ color: '#F47B20' }}>E</span>
+        <span style={{ color: '#fff' }}>NT</span>
+      </div>
+      {tag && (
+        <div style={{ marginTop: tagSpacing, fontFamily: '"Manrope", system-ui, sans-serif', fontSize: Math.max(9, size * 0.18), letterSpacing: '0.55em', fontWeight: 500, color: t.muted, paddingLeft: '0.55em' }}>
+          ANONYMOUSLY
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VButton({ children, onClick, variant = 'primary', disabled, full = false }) {
+  const t = THEME;
+  const [hover, setHover] = useState(false);
+  const base = {
+    height: 52, padding: '0 28px',
+    fontFamily: '"Manrope", system-ui, sans-serif',
+    fontSize: 15, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    border: 'none', borderRadius: 2,
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+    transition: 'all 160ms ease',
+    width: full ? '100%' : undefined,
+    opacity: disabled ? 0.35 : 1,
+    WebkitTapHighlightColor: 'transparent',
+    touchAction: 'manipulation',
+  };
+  let look;
+  if (variant === 'primary') {
+    look = {
+      background: hover && !disabled ? t.accent : t.accentDim,
+      color: '#fff',
+      boxShadow: hover && !disabled ? `0 0 0 1px ${t.accent}, 0 12px 32px -8px ${t.accent}66` : `0 0 0 1px ${t.accent}80`,
+    };
+  } else if (variant === 'outline') {
+    look = { background: 'transparent', color: t.accent, boxShadow: `inset 0 0 0 1px ${hover && !disabled ? t.accent : t.accent + '80'}` };
+  } else {
+    look = { background: 'transparent', color: t.muted };
+  }
+  return (
+    <button onClick={disabled ? undefined : onClick} onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)} style={{ ...base, ...look }}>
+      {children}
+    </button>
+  );
+}
+
+function EmotionListRow({ emo, selected, onClick }) {
+  const t = THEME;
+  const ring = `oklch(0.62 0.16 ${emo.hue})`;
+  return (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 16,
+      padding: '14px 18px', width: '100%',
+      background: selected ? `${ring}14` : 'transparent',
+      border: 'none', cursor: 'pointer',
+      borderBottom: `1px solid ${t.line}`,
+      textAlign: 'left', color: t.text,
+      fontFamily: '"Manrope", system-ui, sans-serif',
+      WebkitTapHighlightColor: 'transparent',
+      touchAction: 'manipulation',
+    }}>
+      <div style={{ width: 14, height: 14, borderRadius: '50%', background: selected ? ring : 'transparent', boxShadow: `0 0 0 1px ${selected ? ring : ring + '70'}`, flexShrink: 0 }} />
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 17, fontWeight: 600, letterSpacing: '-0.01em' }}>{emo.label}</div>
+        <div style={{ fontSize: 12, color: t.muted, marginTop: 2 }}>{emo.hint}</div>
+      </div>
+      {selected && (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8l3.5 3.5L13 5" stroke={ring} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+function Screen({ children, padding = 24, style = {} }) {
+  return (
+    <div style={{
+      width: '100%', height: '100%', padding,
+      boxSizing: 'border-box', display: 'flex', flexDirection: 'column',
+      animation: 'ventFadeIn 320ms cubic-bezier(.2,.7,.3,1)',
+      ...style,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function TopBar({ onBack, step, total }) {
+  const t = THEME;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 32, marginBottom: 22 }}>
+      <button onClick={onBack} style={{ width: 44, height: 44, margin: -6, borderRadius: '50%', background: 'transparent', border: `1px solid ${t.line}`, color: t.muted, cursor: onBack ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, opacity: onBack ? 1 : 0, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
+        <svg width="10" height="14" viewBox="0 0 10 14" fill="none"><path d="M8 1L1.5 7L8 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </button>
+      {step && total && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          {Array.from({ length: total }).map((_, i) => (
+            <div key={i} style={{ width: i + 1 === step ? 18 : 5, height: 5, borderRadius: 3, background: i + 1 <= step ? t.accent : t.line, transition: 'all 240ms' }} />
+          ))}
+        </div>
+      )}
+      <div style={{ width: 44, height: 44 }} />
+    </div>
+  );
+}
+
+function BreathBadge({ cycles }) {
+  const t = THEME;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14, padding: '6px 12px', background: `${t.accent}14`, borderRadius: 4, border: `1px solid ${t.accent}44` }}>
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="3" fill={t.accent}/><circle cx="5" cy="5" r="4.5" stroke={t.accent} strokeWidth="1" opacity="0.5"/></svg>
+      <span style={{ color: t.accent, fontFamily: '"Manrope", system-ui', fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+        {cycles > 0 ? `After ${cycles} breath cycle${cycles !== 1 ? 's' : ''}` : 'After breathing'}
+      </span>
+    </div>
+  );
+}
+
+// ─── icons ───────────────────────────────────────────────
+
+function ArrowRight() {
+  return <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M1 5h12m0 0L9 1m4 4L9 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+function LockIcon() {
+  return <svg width="11" height="13" viewBox="0 0 11 13" fill="none"><rect x="1" y="5.5" width="9" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.2" /><path d="M3 5.5V3.5a2.5 2.5 0 015 0v2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>;
+}
+function PhoneIcon() {
+  return <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4.5 2.5l1.8 1.8c.3.3.3.7.1 1l-1 1.4c.8 1.6 2 2.8 3.6 3.6l1.4-1c.3-.2.7-.2 1 .1l1.8 1.8c.3.3.3.7 0 1l-.8.8c-.6.6-1.5.8-2.3.5-2.4-.8-4.6-3-5.4-5.4-.3-.8-.1-1.7.5-2.3l.8-.8c.3-.3.7-.3 1 0z" fill="currentColor" /></svg>;
+}
+function SearchIcon({ color }) {
+  return <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}><circle cx="6" cy="6" r="4.5" stroke={color} strokeWidth="1.4" /><path d="M9.5 9.5L13 13" stroke={color} strokeWidth="1.4" strokeLinecap="round" /></svg>;
+}
+
+// ─── backdrop ────────────────────────────────────────────
+
+function BackdropPortrait() {
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'radial-gradient(ellipse 70% 50% at 50% 25%, #2a2a2a 0%, #161616 38%, #0B0B0B 70%), linear-gradient(180deg, #0B0B0B 0%, #050505 100%)' }}>
+      <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.18, mixBlendMode: 'overlay' }}>
+        <filter id="vn"><feTurbulence baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" /><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1.2 0" /></filter>
+        <rect width="100%" height="100%" filter="url(#vn)" />
+      </svg>
+      <div style={{ position: 'absolute', width: 280, height: 280, left: '-20%', top: '20%', background: 'radial-gradient(circle, oklch(0.62 0.16 50 / 0.18), transparent 65%)', animation: 'ventDrift 18s ease-in-out infinite alternate' }} />
+      <div style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 -180px 120px -60px rgba(0,0,0,0.85), inset 0 0 80px rgba(0,0,0,0.6)' }} />
+    </div>
+  );
+}
+
+// ─── emotion picker helpers ───────────────────────────────
+
+function FlatList({ emos, sel, setSel, layout }) {
+  const t = THEME;
+  if (layout === 'grid') {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, padding: '4px 4px 24px' }}>
+        {emos.map((e) => {
+          const ring = `oklch(0.62 0.16 ${e.hue})`;
+          const isSel = sel?.key === e.key;
+          return (
+            <button key={e.key} onClick={() => setSel(e)} style={{ padding: '10px 4px', borderRadius: 6, background: isSel ? `${ring}22` : t.surface, color: isSel ? ring : t.text, border: `1px solid ${isSel ? ring : t.line}`, cursor: 'pointer', fontFamily: '"Manrope", system-ui', fontSize: 12, fontWeight: 600, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation', transition: 'all 160ms' }}>
+              {e.label}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+  return (
+    <div style={{ padding: '4px 0' }}>
+      {emos.map((e) => <EmotionListRow key={e.key} emo={e} selected={sel?.key === e.key} onClick={() => setSel(e)} />)}
+    </div>
+  );
+}
+
+function CategoryView({ emos, sel, setSel, openFamily, setOpenFamily }) {
+  const t = THEME;
+  const families = window.VENT_FAMILIES;
+  const familyOrder = ['anger','fear','sad','shame','disgust','surprise','curious','joy','love','peace'];
+  const byFamily = useMemo(() => {
+    const m = {};
+    for (const e of emos) (m[e.family] ||= []).push(e);
+    return m;
+  }, [emos]);
+
+  return (
+    <div style={{ padding: '4px 4px 80px' }}>
+      {familyOrder.map((fid) => {
+        const fam = families[fid];
+        const items = byFamily[fid] || [];
+        const open = openFamily === fid;
+        const ring = `oklch(0.62 0.16 ${fam.hue})`;
+        const selectedInFamily = sel && sel.family === fid;
+        return (
+          <div key={fid} style={{ marginBottom: 8, background: t.surface, border: `1px solid ${t.line}`, borderRadius: 6, overflow: 'hidden' }}>
+            <button onClick={() => setOpenFamily(open ? null : fid)} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '14px 16px', background: 'transparent', border: 'none', cursor: 'pointer', color: t.text, textAlign: 'left', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: ring, boxShadow: `0 0 12px ${ring}99`, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 15, fontWeight: 700, letterSpacing: '-0.01em' }}>{fam.label}</div>
+                <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 11, color: t.muted, marginTop: 2 }}>
+                  {items.length} feelings{selectedInFamily && <span style={{ color: ring }}> · {sel.label}</span>}
+                </div>
+              </div>
+              <svg width="10" height="10" viewBox="0 0 10 10" style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 200ms', flexShrink: 0, color: t.muted }}>
+                <path d="M3 1l4 4-4 4" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {open && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 14px 14px', animation: 'ventFadeIn 200ms ease' }}>
+                {items.map((e) => {
+                  const isSel = sel?.key === e.key;
+                  return (
+                    <button key={e.key} onClick={() => setSel(e)} style={{ padding: '7px 12px', borderRadius: 999, background: isSel ? ring : 'transparent', color: isSel ? '#fff' : t.text, border: `1px solid ${isSel ? ring : t.line}`, cursor: 'pointer', fontFamily: '"Manrope", system-ui', fontSize: 12, fontWeight: 600, letterSpacing: '0.02em', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation', transition: 'all 160ms' }}>
+                      {e.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── screens ─────────────────────────────────────────────
+
+function WelcomeScreen({ ctx }) {
+  const t = THEME;
+  return (
+    <Screen padding={0} style={{ position: 'relative', overflow: 'hidden' }}>
+      <BackdropPortrait />
+      <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '15vh 28px 40px' }}>
+        <div style={{ animation: 'ventRise 600ms cubic-bezier(.2,.7,.3,1) both' }}>
+          <VentWordmark size={84} tagSpacing={14} />
+        </div>
+        <div style={{ flex: 1 }} />
+        <div style={{ color: t.text, fontFamily: '"Manrope", system-ui', fontSize: 17, lineHeight: 1.55, textAlign: 'center', maxWidth: 280, marginBottom: 8, opacity: 0.92, animation: 'ventRise 800ms 120ms cubic-bezier(.2,.7,.3,1) both' }}>
+          A place to set it down.<br />
+          <span style={{ color: t.muted }}>No account. No name. No trace.</span>
+        </div>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 36, animation: 'ventRise 900ms 280ms cubic-bezier(.2,.7,.3,1) both' }}>
+          <VButton full variant="primary" onClick={() => ctx.go('emotion')}>Vent</VButton>
+          <VButton full variant="outline" onClick={() => ctx.go('breathe')}>Breathe</VButton>
+          <button onClick={() => ctx.go('privacy')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: t.muted, fontFamily: '"Manrope", system-ui', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', padding: '16px', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
+            How privacy works
+          </button>
+        </div>
+      </div>
+    </Screen>
+  );
+}
+
+function EmotionScreen({ ctx }) {
+  const t = THEME;
+  const emos = window.VENT_EMOTIONS;
+  const [sel, setSel] = useState(ctx.state.emotion);
+  const [q, setQ] = useState('');
+  const [openFamily, setOpenFamily] = useState(null);
+  const next = () => { ctx.setEmotion(sel); ctx.go('vent'); };
+
+  const filtered = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return emos;
+    return emos.filter((e) => e.label.toLowerCase().includes(s) || e.hint.includes(s));
+  }, [q]);
+
+  return (
+    <Screen>
+      <TopBar onBack={() => ctx.go('welcome')} step={1} total={3} />
+      <div style={{ fontFamily: '"Anton", system-ui', fontSize: 34, color: t.text, letterSpacing: '0.01em', lineHeight: 1, textTransform: 'uppercase' }}>How does it<br />feel right now?</div>
+      <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 12, color: t.muted, marginTop: 8, letterSpacing: '0.04em' }}>Pick the closest. You can be wrong.</div>
+      <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', background: t.surface, border: `1px solid ${t.line}`, borderRadius: 6, padding: '0 12px' }}>
+        <SearchIcon color={t.muted} />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search 84 feelings…" style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: t.text, fontFamily: '"Manrope", system-ui', fontSize: 14, padding: '12px 10px' }} />
+        {q && <button onClick={() => setQ('')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: t.muted, padding: '8px 4px', fontSize: 18, lineHeight: 1, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>×</button>}
+      </div>
+      <div style={{ flex: 1, marginTop: 14, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        {q
+          ? <FlatList emos={filtered} sel={sel} setSel={setSel} layout="list" />
+          : <CategoryView emos={emos} sel={sel} setSel={setSel} openFamily={openFamily} setOpenFamily={setOpenFamily} />}
+        {q && filtered.length === 0 && (
+          <div style={{ padding: '40px 16px', textAlign: 'center', color: t.muted, fontFamily: '"Manrope", system-ui', fontSize: 13 }}>
+            Nothing matched "{q}". Try a different word.
+          </div>
+        )}
+      </div>
+      <div style={{ paddingTop: 12 }}>
+        <VButton full disabled={!sel} onClick={next}>Continue <ArrowRight /></VButton>
+      </div>
+    </Screen>
+  );
+}
+
+function VentScreen({ ctx }) {
+  const t = THEME;
+  const [text, setText] = useState(ctx.state.vent || '');
+  const ref = useRef(null);
+  const emo = ctx.state.emotion;
+  const MAX = 1200;
+  useEffect(() => { setTimeout(() => ref.current && ref.current.focus(), 300); }, []);
+  const next = () => { ctx.setVent(text); ctx.go('review'); };
+  const ring = emo ? `oklch(0.62 0.16 ${emo.hue})` : t.accent;
+
+  return (
+    <Screen>
+      <TopBar onBack={() => ctx.go('emotion')} step={2} total={3} />
+      {ctx.state.source === 'breath' && <BreathBadge cycles={ctx.state.breathCycles} />}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ padding: '6px 14px', borderRadius: 999, background: `${ring}1a`, color: ring, fontFamily: '"Manrope", system-ui', fontSize: 12, fontWeight: 700, letterSpacing: '0.16em', textTransform: 'uppercase', boxShadow: `inset 0 0 0 1px ${ring}55` }}>
+          {emo?.label || 'feeling'}
+        </div>
+        <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 12, color: t.muted, letterSpacing: '0.04em' }}>{emo?.hint}</div>
+      </div>
+      <div style={{ fontFamily: '"Anton", system-ui', fontSize: 32, color: t.text, letterSpacing: '0.01em', lineHeight: 1, textTransform: 'uppercase', marginTop: 22 }}>Let it out.</div>
+      <div style={{ position: 'relative', flex: 1, marginTop: 20, display: 'flex' }}>
+        <textarea ref={ref} value={text} maxLength={MAX} onChange={(e) => setText(e.target.value)} placeholder={ctx.state.prompt} style={{ flex: 1, width: '100%', resize: 'none', background: t.surface, color: t.text, border: `1px solid ${t.line}`, borderRadius: 8, padding: '16px 16px 36px', fontFamily: '"Manrope", system-ui', fontSize: 16, lineHeight: 1.55, outline: 'none', boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' }} />
+        <div style={{ position: 'absolute', right: 12, bottom: 10, fontFamily: '"Manrope", system-ui', fontSize: 11, color: text.length > MAX * 0.85 ? t.accent : t.muted, letterSpacing: '0.04em' }}>{text.length} / {MAX}</div>
+      </div>
+      <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 11, color: t.muted, margin: '14px 0', letterSpacing: '0.04em', lineHeight: 1.5 }}>
+        Anonymous · Not associated with any account or device fingerprint.
+      </div>
+      <VButton full disabled={text.trim().length < 4} onClick={next}>Review <ArrowRight /></VButton>
+    </Screen>
+  );
+}
+
+function ReviewScreen({ ctx }) {
+  const t = THEME;
+  const emo = ctx.state.emotion;
+  const ring = emo ? `oklch(0.62 0.16 ${emo.hue})` : t.accent;
+  return (
+    <Screen>
+      <TopBar onBack={() => ctx.go('vent')} step={3} total={3} />
+      <div style={{ fontFamily: '"Anton", system-ui', fontSize: 38, color: t.text, letterSpacing: '0.01em', lineHeight: 1, textTransform: 'uppercase' }}>One last look.</div>
+      <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 13, color: t.muted, marginTop: 10, letterSpacing: '0.04em' }}>Once it's released, it's released. We don't track edits.</div>
+      <div style={{ flex: 1, marginTop: 24, overflow: 'auto', background: t.surface, border: `1px solid ${t.line}`, borderRadius: 8, padding: 18, display: 'flex', flexDirection: 'column', gap: 14, WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: ring, boxShadow: `0 0 12px ${ring}` }} />
+          <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 11, color: t.muted, letterSpacing: '0.22em', textTransform: 'uppercase', fontWeight: 700 }}>{emo?.label || 'Unmarked'}</div>
+          <div style={{ flex: 1 }} />
+          <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 11, color: t.muted }}>Anonymous</div>
+        </div>
+        <div style={{ color: t.text, fontFamily: '"Manrope", system-ui', fontSize: 16, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{ctx.state.vent}</div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '14px 0', color: t.muted, fontFamily: '"Manrope", system-ui', fontSize: 11, letterSpacing: '0.04em' }}>
+        <LockIcon /> Sent to encrypted storage. Not viewable by anyone you know.
+      </div>
+      <VButton full onClick={() => ctx.submit()}>Release it</VButton>
+    </Screen>
+  );
+}
+
+function SubmittingScreen({ ctx }) {
+  const t = THEME;
+  return (
+    <Screen padding={0}>
+      <BackdropPortrait />
+      <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }}>
+        <div style={{ position: 'relative', width: 80, height: 80 }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `2px solid ${t.accent}`, borderTopColor: 'transparent', animation: 'ventSpin 1.1s linear infinite' }} />
+          <div style={{ position: 'absolute', inset: 14, borderRadius: '50%', background: t.accent, opacity: 0.6, animation: 'ventPulse 1.4s ease-in-out infinite' }} />
+        </div>
+        <div style={{ fontFamily: '"Anton", system-ui', fontSize: 28, color: t.text, letterSpacing: '0.04em', textTransform: 'uppercase' }}>Releasing…</div>
+      </div>
+    </Screen>
+  );
+}
+
+function ThanksScreen({ ctx }) {
+  const t = THEME;
+  return (
+    <Screen padding={0} style={{ position: 'relative', overflow: 'hidden' }}>
+      <BackdropPortrait />
+      <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12vh 28px 40px' }}>
+        <div style={{ width: 96, height: 96, borderRadius: '50%', background: `radial-gradient(circle at 35% 30%, ${t.accent}, ${t.accentDim} 65%, transparent 80%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 40px -4px ${t.accent}cc`, animation: 'ventBloom 700ms cubic-bezier(.2,.7,.3,1) both' }}>
+          <svg width="42" height="42" viewBox="0 0 42 42" fill="none"><path d="M11 22l7 7L31 14" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </div>
+        <div style={{ fontFamily: '"Anton", system-ui', fontSize: 56, color: t.text, letterSpacing: '0.02em', textTransform: 'uppercase', marginTop: 36, textAlign: 'center', lineHeight: 1, animation: 'ventRise 700ms 100ms cubic-bezier(.2,.7,.3,1) both' }}>Released.</div>
+        <div style={{ color: t.text, opacity: 0.82, fontFamily: '"Manrope", system-ui', fontSize: 15, lineHeight: 1.55, textAlign: 'center', maxWidth: 280, marginTop: 18, animation: 'ventRise 800ms 220ms cubic-bezier(.2,.7,.3,1) both' }}>
+          Whatever you sent is no longer only yours to carry.
+        </div>
+        <div style={{ flex: 1 }} />
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10, animation: 'ventRise 900ms 360ms cubic-bezier(.2,.7,.3,1) both' }}>
+          <VButton full variant="outline" onClick={() => ctx.go('breathe')}>Take a breath</VButton>
+          <VButton full variant="ghost" onClick={() => ctx.go('support')}>Need a person?</VButton>
+          <VButton full variant="primary" onClick={() => ctx.reset()}>Vent again</VButton>
+        </div>
+      </div>
+    </Screen>
+  );
+}
+
+function SupportScreen({ ctx }) {
+  const t = THEME;
+  return (
+    <Screen>
+      <TopBar onBack={() => ctx.go(ctx.state.lastRoute || 'thanks')} />
+      <div style={{ fontFamily: '"Anton", system-ui', fontSize: 38, color: t.text, letterSpacing: '0.01em', lineHeight: 1, textTransform: 'uppercase' }}>If you need<br />a person.</div>
+      <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 13, color: t.muted, marginTop: 10, letterSpacing: '0.04em', lineHeight: 1.55, maxWidth: 280 }}>
+        Free, confidential, 24/7. You don't need a reason to reach out.
+      </div>
+      <div style={{ flex: 1, marginTop: 22, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <button onClick={() => ctx.go('breathe')} style={{ padding: '16px', margin: '0 0 14px', width: '100%', background: `linear-gradient(180deg, ${t.accent}1a, ${t.surface})`, border: `1px solid ${t.accent}55`, borderRadius: 6, display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', textAlign: 'left', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: t.accent, color: '#fff', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 18px -2px ${t.accent}` }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="currentColor" /><circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1" opacity="0.5" /></svg>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ color: t.text, fontFamily: '"Manrope", system-ui', fontSize: 14, fontWeight: 700 }}>Take a guided breath</div>
+            <div style={{ color: t.muted, fontFamily: '"Manrope", system-ui', fontSize: 12, marginTop: 3 }}>4·7·8 rhythm · 90 seconds</div>
+          </div>
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" style={{ color: t.muted }}><path d="M1 1l6 6-6 6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+        <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 10, color: t.muted, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700, padding: '4px 0 10px', marginTop: 4 }}>Helplines</div>
+        {window.VENT_RESOURCES.map((r, i) => (
+          <div key={i} style={{ padding: '16px', marginBottom: 10, background: t.surface, border: `1px solid ${t.line}`, borderRadius: 6, display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: `${t.accent}1f`, boxShadow: `inset 0 0 0 1px ${t.accent}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: t.accent, flexShrink: 0 }}><PhoneIcon /></div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: t.text, fontFamily: '"Manrope", system-ui', fontSize: 14, fontWeight: 700 }}>{r.name}</div>
+              <div style={{ color: t.muted, fontFamily: '"Manrope", system-ui', fontSize: 12, marginTop: 3 }}>{r.detail}</div>
+            </div>
+            <div style={{ color: t.muted, fontFamily: '"Manrope", system-ui', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', padding: '4px 8px', border: `1px solid ${t.line}`, borderRadius: 4, flexShrink: 0 }}>{r.tag}</div>
+          </div>
+        ))}
+        <div style={{ padding: '12px 0 40px', fontFamily: '"Manrope", system-ui', fontSize: 11, color: t.muted, lineHeight: 1.6 }}>
+          If you or someone you're with is in immediate danger, call your local emergency number.
+        </div>
+      </div>
+    </Screen>
+  );
+}
+
+function PrivacyScreen({ ctx }) {
+  const t = THEME;
+  const points = [
+    { h: 'Anonymous by default',    b: 'No account, no email, no name. We never ask.' },
+    { h: 'No device fingerprinting',b: 'Your submission carries no identifier that links back to you.' },
+    { h: 'Stored, then forgotten',  b: 'Vents are kept securely for trend analysis only — never republished, never sold.' },
+    { h: 'Crisis is different',     b: 'If a vent suggests immediate danger, we surface resources. We do not contact authorities.' },
+  ];
+  return (
+    <Screen>
+      <TopBar onBack={() => ctx.go(ctx.state.lastRoute || 'welcome')} />
+      <div style={{ fontFamily: '"Anton", system-ui', fontSize: 38, color: t.text, letterSpacing: '0.01em', lineHeight: 1, textTransform: 'uppercase' }}>How privacy<br />works.</div>
+      <div style={{ flex: 1, marginTop: 22, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        {points.map((p, i) => (
+          <div key={i} style={{ padding: '16px 0', borderBottom: i < points.length - 1 ? `1px solid ${t.line}` : 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: t.text, fontFamily: '"Manrope", system-ui', fontSize: 15, fontWeight: 700 }}>
+              <span style={{ width: 4, height: 4, borderRadius: 2, background: t.accent, flexShrink: 0 }} />
+              {p.h}
+            </div>
+            <div style={{ color: t.muted, fontFamily: '"Manrope", system-ui', fontSize: 13, lineHeight: 1.55, marginTop: 6, paddingLeft: 14 }}>{p.b}</div>
+          </div>
+        ))}
+        <div style={{ padding: '20px 0 40px', fontFamily: '"Manrope", system-ui', fontSize: 11, color: t.muted, letterSpacing: '0.04em' }}>
+          Read the full notice at vent.app/privacy
+        </div>
+      </div>
+      <VButton full variant="outline" onClick={() => ctx.go(ctx.state.lastRoute || 'welcome')}>Got it</VButton>
+    </Screen>
+  );
+}
+
+// ─── breathing exercise ───────────────────────────────────
+
+const BREATH_PHASES = [
+  { key: 'inhale', label: 'Inhale', hint: 'fill gently',    dur: 4 },
+  { key: 'hold',   label: 'Hold',   hint: 'rest there',     dur: 7 },
+  { key: 'exhale', label: 'Exhale', hint: 'let it all out', dur: 8 },
+];
+
+function BreathScreen({ ctx }) {
+  const t = THEME;
+  const [running, setRunning] = useState(false);
+  const [phaseIdx, setPhaseIdx] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(BREATH_PHASES[0].dur);
+  const [cycles, setCycles] = useState(0);
+  const phase = BREATH_PHASES[phaseIdx];
+  const ringRef = useRef(null);
+  const haloRef = useRef(null);
+  const animsRef = useRef([]);
+
+  useEffect(() => {
+    if (!running) return;
+    let last = performance.now();
+    const id = setInterval(() => {
+      const now = performance.now();
+      const dt = (now - last) / 1000;
+      last = now;
+      setTimeLeft((tl) => {
+        const next = tl - dt;
+        if (next <= 0) {
+          setPhaseIdx((p) => { const np = (p + 1) % BREATH_PHASES.length; if (np === 0) setCycles((c) => c + 1); return np; });
+          return 0;
+        }
+        return next;
+      });
+    }, 100);
+    return () => clearInterval(id);
+  }, [running]);
+
+  useEffect(() => { setTimeLeft(phase.dur); }, [phaseIdx]);
+
+  useEffect(() => {
+    if (!running) { animsRef.current.forEach((a) => { try { a.pause(); } catch {} }); return; }
+    animsRef.current.forEach((a) => { try { a.cancel(); } catch {} });
+    animsRef.current = [];
+    const PEAK = 1.18, REST = 0.82;
+    const from = phase.key === 'inhale' ? REST : PEAK;
+    const to   = phase.key === 'exhale' ? REST : PEAK;
+    const easing = phase.key === 'inhale' ? 'cubic-bezier(.4,0,.2,1)' : phase.key === 'exhale' ? 'cubic-bezier(.6,0,.4,1)' : 'linear';
+    for (const el of [ringRef.current, haloRef.current]) {
+      if (!el) continue;
+      const a = el.animate([{ transform: `scale(${from})` }, { transform: `scale(${to})` }], { duration: phase.dur * 1000, easing, fill: 'forwards' });
+      animsRef.current.push(a);
+    }
+  }, [phaseIdx, running]);
+
+  const reset = () => {
+    setRunning(false); setPhaseIdx(0); setTimeLeft(BREATH_PHASES[0].dur); setCycles(0);
+    animsRef.current.forEach((a) => { try { a.cancel(); } catch {} });
+    animsRef.current = [];
+    if (ringRef.current) ringRef.current.style.transform = 'scale(1)';
+    if (haloRef.current) haloRef.current.style.transform = 'scale(1)';
+  };
+
+  return (
+    <Screen padding={0} style={{ position: 'relative', overflow: 'hidden' }}>
+      <BackdropPortrait />
+      <div style={{ position: 'relative', zIndex: 1, flex: 1, padding: '0 24px 24px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '24px 0 4px' }}><TopBar onBack={() => ctx.go(ctx.state.lastRoute || 'welcome')} /></div>
+        <div style={{ fontFamily: '"Anton", system-ui', fontSize: 36, color: t.text, letterSpacing: '0.02em', lineHeight: 1, textTransform: 'uppercase' }}>Breathe.</div>
+        <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 12, color: t.muted, marginTop: 8, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 700 }}>4 · 7 · 8 rhythm</div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', minHeight: 240 }}>
+          <div ref={haloRef} style={{ position: 'absolute', width: 280, height: 280, borderRadius: '50%', background: `radial-gradient(circle, ${t.accent}26, transparent 65%)`, opacity: running ? 1 : 0.35, transition: 'opacity 400ms ease', pointerEvents: 'none', willChange: 'transform' }} />
+          <div ref={ringRef} style={{ position: 'relative', width: 220, height: 220, borderRadius: '50%', background: '#0f0f0f', boxShadow: running ? `0 0 0 2px ${t.accent}, 0 0 0 8px ${t.accent}22, 0 0 60px -8px ${t.accent}99` : `0 0 0 1px ${t.accent}66, inset 0 0 30px rgba(0,0,0,0.6)`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'box-shadow 400ms ease', willChange: 'transform' }}>
+            <div style={{ width: 164, height: 164, borderRadius: '50%', background: '#050505', border: `1px solid ${t.accent}55`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '0 16px', boxSizing: 'border-box' }}>
+              <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 10, color: t.accent, letterSpacing: '0.32em', textTransform: 'uppercase', fontWeight: 700 }}>{phase.label}</div>
+              <div style={{ fontFamily: '"Anton", system-ui', fontSize: 58, lineHeight: 1, color: t.text, marginTop: 6, letterSpacing: '0.02em', fontVariantNumeric: 'tabular-nums' }}>{Math.ceil(timeLeft) || phase.dur}</div>
+              <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 10, color: t.muted, marginTop: 10, letterSpacing: '0.04em' }}>{running ? phase.hint : 'tap start when ready'}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '4fr 7fr 8fr', gap: 6, marginBottom: 14 }}>
+          {BREATH_PHASES.map((p, i) => {
+            const isActive = i === phaseIdx && running;
+            const fill = i < phaseIdx ? 1 : i === phaseIdx ? Math.min(1, (p.dur - timeLeft) / p.dur) : 0;
+            return (
+              <div key={p.key} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <div style={{ height: 3, background: t.line, borderRadius: 2, overflow: 'hidden' }}>
+                  <div style={{ width: `${fill * 100}%`, height: '100%', background: t.accent, transition: 'width 100ms linear' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: '"Manrope", system-ui', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', fontWeight: 700, color: isActive ? t.accent : t.muted }}>
+                  <span>{p.label}</span><span style={{ fontVariantNumeric: 'tabular-nums' }}>{p.dur}s</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ display: 'flex', background: t.surface, border: `1px solid ${t.line}`, borderRadius: 6, padding: '10px 16px', marginBottom: 14, fontFamily: '"Manrope", system-ui' }}>
+          {[
+            { label: 'Cycles', value: cycles },
+            { label: 'Time',   value: `${String(Math.floor(cycles * 19 / 60)).padStart(2,'0')}:${String(cycles * 19 % 60).padStart(2,'0')}` },
+            { label: 'State',  value: running ? 'flow' : cycles > 0 ? 'paused' : 'ready' },
+          ].map((s, i) => (
+            <React.Fragment key={s.label}>
+              {i > 0 && <div style={{ width: 1, background: t.line, margin: '0 12px' }} />}
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: 9, color: t.accent, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase' }}>{s.label}</div>
+                <div style={{ fontSize: 16, color: t.text, marginTop: 3, fontFamily: '"Anton", system-ui', letterSpacing: '0.04em', fontVariantNumeric: 'tabular-nums', textTransform: 'uppercase' }}>{s.value}</div>
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          {!running
+            ? <VButton full variant="primary" onClick={() => setRunning(true)}>{cycles > 0 ? 'Resume' : 'Begin'}</VButton>
+            : <VButton full variant="outline" onClick={() => setRunning(false)}>Pause</VButton>}
+          <button onClick={reset} style={{ width: 52, height: 52, flexShrink: 0, background: 'transparent', border: `1px solid ${t.line}`, color: t.muted, borderRadius: 2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }} aria-label="Reset">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8a5 5 0 109-3M3 8L1 6m2 2l2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
+        </div>
+
+        <button onClick={() => { setRunning(false); animsRef.current.forEach((a) => { try { a.pause(); } catch {} }); ctx.startFromBreath(cycles); }} style={{ marginTop: 12, padding: '14px 16px', background: cycles > 0 ? `${t.accent}14` : 'transparent', border: `1px solid ${cycles > 0 ? t.accent + '66' : t.line}`, borderRadius: 2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: cycles > 0 ? t.accent : t.muted, fontFamily: '"Manrope", system-ui', fontSize: 13, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation', transition: 'all 200ms ease' }}>
+          <span>{cycles > 0 ? 'How does it feel now?' : 'Skip · Share how you feel'}</span>
+          <ArrowRight />
+        </button>
+      </div>
+    </Screen>
+  );
+}
+
+// ─── app ─────────────────────────────────────────────────
+
+function App() {
+  const [state, setState] = useState({
+    route: 'welcome', lastRoute: 'welcome',
+    emotion: null, vent: '',
+    prompt: window.VENT_PROMPTS[0],
+    source: null, breathCycles: 0,
+  });
+
+  const ctx = {
+    state,
+    go: (route) => setState(s => ({ ...s, lastRoute: s.route, route })),
+    setEmotion: (e) => setState(s => ({ ...s, emotion: e })),
+    setVent: (v) => setState(s => ({ ...s, vent: v })),
+    submit: () => {
+      setState(s => ({ ...s, lastRoute: s.route, route: 'submitting' }));
+      setTimeout(() => setState(s => ({ ...s, lastRoute: 'submitting', route: 'thanks' })), 1600);
+    },
+    reset: () => {
+      const next = window.VENT_PROMPTS[Math.floor(Math.random() * window.VENT_PROMPTS.length)];
+      setState({ route: 'emotion', lastRoute: 'thanks', emotion: null, vent: '', prompt: next, source: null, breathCycles: 0 });
+    },
+    startFromBreath: (cycles) => {
+      setState(s => ({ ...s, lastRoute: 'breathe', route: 'emotion', emotion: null, vent: '', source: 'breath', breathCycles: cycles || 0 }));
+    },
+  };
+
+  const screens = {
+    welcome:    <WelcomeScreen ctx={ctx} />,
+    emotion:    <EmotionScreen ctx={ctx} />,
+    vent:       <VentScreen ctx={ctx} />,
+    review:     <ReviewScreen ctx={ctx} />,
+    submitting: <SubmittingScreen ctx={ctx} />,
+    thanks:     <ThanksScreen ctx={ctx} />,
+    support:    <SupportScreen ctx={ctx} />,
+    privacy:    <PrivacyScreen ctx={ctx} />,
+    breathe:    <BreathScreen ctx={ctx} />,
+  };
+
+  return (
+    <div key={state.route} style={{ width: '100%', height: '100%' }}>
+      {screens[state.route]}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
