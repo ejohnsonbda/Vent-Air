@@ -422,27 +422,89 @@ dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(6px); }
   border-radius: var(--radius-sm); display: flex; align-items: center; word-break: break-all;
 }
 
-/* Quick Stats */
-#dashboardDlg { max-width: 500px; }
-.qs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
-.qs-stat {
-  background: var(--surface-3); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 16px; text-align: center;
+/* Analytics Dashboard */
+#dashboardDlg.analytics-dialog {
+  max-width: 1120px;
+  width: min(1120px, 94vw);
+  background: var(--surface-1);
 }
-.qs-val { font-size: 32px; font-weight: 800; color: var(--brand); line-height: 1; margin-bottom: 6px; }
-.qs-lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); }
-
-.qs-list { display: flex; flex-direction: column; gap: 8px; }
-.qs-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; background: var(--surface-3); border: 1px solid var(--border);
-  border-radius: var(--radius-md); transition: border-color var(--transition);
+.analytics-dialog .modal-bd { max-height: 76vh; }
+.dashboard-title { font-size: 17px; font-weight: 800; letter-spacing: -.2px; }
+.dashboard-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.4; }
+.analytics-bd { padding: 22px; }
+.dashboard-toolbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; margin-bottom: 16px;
+  background: rgba(249,115,22,.07); border: 1px solid rgba(249,115,22,.18);
+  border-radius: var(--radius-md); color: #fdba74; font-size: 13px; line-height: 1.45;
 }
-.qs-item:hover { border-color: var(--border-hover); }
-.qs-name { flex: 1; font-size: 13px; font-weight: 500; }
-.qs-bar-wrap { flex: 1.5; height: 5px; background: var(--surface-4); border-radius: 3px; overflow: hidden; }
-.qs-bar { height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-dark)); border-radius: 3px; transition: width .6s cubic-bezier(.4,0,.2,1); }
-.qs-count { font-size: 13px; font-weight: 700; color: var(--brand); min-width: 30px; text-align: right; }
+.dashboard-refresh {
+  border: 1px solid rgba(249,115,22,.28); background: rgba(249,115,22,.12);
+  color: var(--brand); border-radius: 999px; padding: 7px 12px;
+  font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: all var(--transition); white-space: nowrap;
+}
+.dashboard-refresh:hover { background: rgba(249,115,22,.22); border-color: var(--brand); }
+.dash-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.dash-kpi {
+  position: relative; overflow: hidden;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 16px;
+}
+.dash-kpi::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 2px;
+  background: linear-gradient(90deg, var(--brand), transparent);
+  opacity: .85;
+}
+.dash-kpi-value { font-size: clamp(22px, 3vw, 34px); font-weight: 800; color: var(--brand); line-height: 1; margin-bottom: 8px; }
+.dash-kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 700; letter-spacing: .6px; text-transform: uppercase; }
+.dash-kpi-note { font-size: 12px; color: var(--text-secondary); margin-top: 8px; line-height: 1.4; }
+.analytics-grid { display: grid; grid-template-columns: 1.25fr .75fr; gap: 14px; }
+.analytics-panel {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px; min-width: 0;
+}
+.analytics-panel.full { grid-column: 1 / -1; }
+.analytics-panel h3 { font-size: 15px; font-weight: 800; margin-bottom: 4px; letter-spacing: -.2px; }
+.analytics-panel p { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 14px; }
+.analytics-bars { display: flex; flex-direction: column; gap: 9px; }
+.analytics-row { display: grid; grid-template-columns: minmax(92px, 1fr) 2.4fr 58px; align-items: center; gap: 10px; }
+.analytics-name { font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.analytics-track { height: 9px; background: var(--surface-4); border-radius: 999px; overflow: hidden; }
+.analytics-fill { height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-dark)); border-radius: inherit; min-width: 2px; }
+.analytics-count { text-align: right; color: var(--brand); font-size: 13px; font-weight: 800; }
+.trend-chart { height: 230px; display: flex; align-items: end; gap: 7px; padding: 8px 2px 0; }
+.trend-col { flex: 1; min-width: 16px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 8px; height: 100%; }
+.trend-bar { width: 100%; min-height: 2px; border-radius: 8px 8px 2px 2px; background: linear-gradient(180deg, var(--brand), var(--brand-dark)); box-shadow: 0 0 16px rgba(249,115,22,.14); }
+.trend-label { writing-mode: vertical-rl; transform: rotate(180deg); color: var(--text-muted); font-size: 10px; white-space: nowrap; }
+.trend-value { color: var(--text-secondary); font-size: 11px; font-weight: 700; }
+.mini-table { display: flex; flex-direction: column; gap: 8px; }
+.mini-row { display: grid; grid-template-columns: 92px 1fr 48px; align-items: center; gap: 10px; font-size: 13px; }
+.mini-label { color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-track { height: 7px; background: var(--surface-4); border-radius: 999px; overflow: hidden; }
+.mini-fill { height: 100%; background: linear-gradient(90deg, #38bdf8, var(--brand)); border-radius: inherit; min-width: 2px; }
+.mini-count { text-align: right; color: var(--brand); font-weight: 800; }
+.weekday-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.weekday-cell { background: var(--surface-3); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px 6px; text-align: center; }
+.weekday-name { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+.weekday-count { font-size: 18px; color: var(--brand); font-weight: 800; margin-top: 6px; }
+.dashboard-empty { color: var(--text-muted); font-size: 13px; text-align: center; padding: 24px 10px; border: 1px dashed var(--border); border-radius: var(--radius-md); }
+@media (max-width: 920px) {
+  .dash-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .analytics-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  #dashboardDlg.analytics-dialog { width: 96vw; }
+  .analytics-bd { padding: 16px; }
+  .dashboard-toolbar { flex-direction: column; align-items: flex-start; }
+  .dash-kpi-grid { grid-template-columns: 1fr; }
+  .analytics-row { grid-template-columns: 1fr; gap: 6px; }
+  .analytics-count { text-align: left; }
+  .trend-chart { height: 180px; gap: 5px; overflow-x: auto; align-items: end; }
+  .trend-col { flex: 0 0 28px; }
+  .weekday-grid { grid-template-columns: repeat(2, 1fr); }
+  .mini-row { grid-template-columns: 74px 1fr 42px; }
+}
 
 /* Empty */
 .empty-state { grid-column: 1/-1; text-align: center; padding: 80px 20px; color: var(--text-muted); }
@@ -523,7 +585,7 @@ dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(6px); }
         </button>
         <button id="dashboardBtn" class="hdr-btn">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-8"/></svg>
-          Quick Stats
+          Analytics
         </button>
         <span class="hdr-user">User: <strong id="currentUser">—</strong></span>
         <button id="logoutBtn" class="hdr-btn">
@@ -630,24 +692,50 @@ dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(6px); }
     </div>
   </dialog>
 
-  <!-- Quick Stats Modal -->
-  <dialog id="dashboardDlg">
+  <!-- Analytics Dashboard Modal -->
+  <dialog id="dashboardDlg" class="analytics-dialog">
     <div class="modal-hdr">
       <div>
-        <div style="font-size:16px;font-weight:700">Emotional Analytics</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Top 10 most frequent emotional states</div>
+        <div class="dashboard-title">Emotional Analytics Dashboard</div>
+        <div class="dashboard-subtitle" id="dashboardScope">Live operational insight across the Vent-Air submission archive.</div>
       </div>
       <button class="modal-close" id="closeDashboardBtn" aria-label="Close">×</button>
     </div>
-    <div class="modal-bd">
-      <div class="qs-grid">
-        <div class="qs-stat"><div class="qs-val" id="totalEntries">0</div><div class="qs-lbl">Total Entries</div></div>
-        <div class="qs-stat"><div class="qs-val" id="uniqueFeelings">0</div><div class="qs-lbl">Unique Feelings</div></div>
+    <div class="modal-bd analytics-bd">
+      <div class="dashboard-toolbar">
+        <span id="dashboardFilterSummary">Dashboard is synced to the active portal filters.</span>
+        <button type="button" id="dashboardRefreshBtn" class="dashboard-refresh">Refresh analytics</button>
       </div>
-      <div class="qs-list" id="feelingStats"></div>
-      <div style="margin-top:14px;font-size:12px;color:var(--text-muted);text-align:center">
-        Data updates in real-time from Supabase.
-      </div>
+
+      <section class="dash-kpi-grid" aria-label="Analytics summary metrics">
+        <article class="dash-kpi"><div class="dash-kpi-value" id="totalEntries">0</div><div class="dash-kpi-label">Total records</div><div class="dash-kpi-note">All loaded Supabase submissions.</div></article>
+        <article class="dash-kpi"><div class="dash-kpi-value" id="filteredEntries">0</div><div class="dash-kpi-label">Filtered records</div><div class="dash-kpi-note" id="filteredNote">Currently in scope.</div></article>
+        <article class="dash-kpi"><div class="dash-kpi-value" id="uniqueFeelings">0</div><div class="dash-kpi-label">Unique feelings</div><div class="dash-kpi-note">Distinct values in “I am felling”.</div></article>
+        <article class="dash-kpi"><div class="dash-kpi-value" id="avgMonthly">0</div><div class="dash-kpi-label">Avg. per month</div><div class="dash-kpi-note" id="latestEntryNote">Latest entry: —</div></article>
+      </section>
+
+      <section class="analytics-grid" aria-label="Analytics charts">
+        <article class="analytics-panel">
+          <h3>Top emotional states</h3>
+          <p>Most frequent self-reported feelings in the current dashboard scope.</p>
+          <div class="analytics-bars" id="feelingStats"></div>
+        </article>
+        <article class="analytics-panel">
+          <h3>Yearly distribution</h3>
+          <p>Submission volume grouped by calendar year.</p>
+          <div class="mini-table" id="yearStats"></div>
+        </article>
+        <article class="analytics-panel full">
+          <h3>Monthly activity trend</h3>
+          <p>Recent monthly submission volume, based on the selected filters and date range.</p>
+          <div class="trend-chart" id="monthlyTrend"></div>
+        </article>
+        <article class="analytics-panel full">
+          <h3>Day-of-week rhythm</h3>
+          <p>Distribution of submissions by weekday, useful for spotting recurring support patterns.</p>
+          <div class="weekday-grid" id="weekdayStats"></div>
+        </article>
+      </section>
     </div>
   </dialog>
 
@@ -781,6 +869,7 @@ function subscribeRealtime() {
       buildFeelingList();
       buildYearList();
       applyFilters();
+      if (dashDlg.open) renderDashboard();
     })
     .subscribe();
 }
@@ -811,22 +900,139 @@ function buildYearList() {
   const yearSel = document.getElementById('year');
   yearSel.innerHTML = '<option value="">All years</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
 }
-function calculateFeelingStats() {
+function hasActiveFilters() {
+  return Boolean(FILTERS.q || FILTERS.feeling || FILTERS.year || FILTERS.from || FILTERS.to);
+}
+function getValidDate(item) {
+  const d = new Date(item?.["Created Date"]);
+  return isNaN(d.getTime()) ? null : d;
+}
+function shortMonthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+}
+function formatMonthKey(key) {
+  const [year, month] = key.split('-').map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString('en-US', {month:'short', year:'2-digit'});
+}
+function formatCompactNumber(value) {
+  return Number(value || 0).toLocaleString('en-US');
+}
+function countBy(rows, getKey) {
   const counts = {};
-  DATA.forEach(i => { const f = i["I am felling"]; if (f) counts[f] = (counts[f]||0)+1; });
-  return Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,10);
+  rows.forEach(row => {
+    const key = getKey(row);
+    if (key) counts[key] = (counts[key] || 0) + 1;
+  });
+  return Object.entries(counts).sort((a,b) => b[1] - a[1]);
+}
+function calculateFeelingStats(rows = DATA, limit = 12) {
+  return countBy(rows, i => i["I am felling"] || 'Unspecified').slice(0, limit);
+}
+function calculateYearStats(rows) {
+  return countBy(rows, item => {
+    const d = getValidDate(item);
+    return d ? String(d.getFullYear()) : '';
+  }).sort((a,b) => Number(b[0]) - Number(a[0]));
+}
+function calculateMonthlyTrend(rows) {
+  const datedRows = rows.map(item => getValidDate(item)).filter(Boolean);
+  const counts = {};
+  datedRows.forEach(date => { const key = shortMonthKey(date); counts[key] = (counts[key] || 0) + 1; });
+  return Object.keys(counts).sort().slice(-12).map(key => [key, counts[key]]);
+}
+function calculateWeekdayStats(rows) {
+  const names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const counts = Object.fromEntries(names.map(name => [name, 0]));
+  rows.forEach(item => {
+    const d = getValidDate(item);
+    if (d) counts[names[d.getDay()]] += 1;
+  });
+  return names.map(name => [name, counts[name]]);
+}
+function currentFilterSummary(rows) {
+  const parts = [];
+  if (FILTERS.q) parts.push(`search “${FILTERS.q}”`);
+  if (FILTERS.feeling) parts.push(`feeling “${FILTERS.feeling}”`);
+  if (FILTERS.year) parts.push(`year ${FILTERS.year}`);
+  if (FILTERS.from) parts.push(`from ${FILTERS.from}`);
+  if (FILTERS.to) parts.push(`to ${FILTERS.to}`);
+  return parts.length
+    ? `Analyzing ${formatCompactNumber(rows.length)} filtered records using ${parts.join(', ')}.`
+    : `Analyzing all ${formatCompactNumber(DATA.length)} loaded records.`;
+}
+function renderBarList(container, rows, cssPrefix = 'analytics') {
+  const max = rows.length ? Math.max(...rows.map(([,count]) => count)) : 0;
+  if (!rows.length) {
+    container.innerHTML = '<div class="dashboard-empty">No records match the current dashboard scope.</div>';
+    return;
+  }
+  container.innerHTML = rows.map(([name, count]) => `
+    <div class="${cssPrefix}-row">
+      <span class="${cssPrefix}-name" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
+      <div class="${cssPrefix}-track"><div class="${cssPrefix}-fill" style="width:${max ? (count / max) * 100 : 0}%"></div></div>
+      <span class="${cssPrefix}-count">${formatCompactNumber(count)}</span>
+    </div>`).join('');
+}
+function renderMiniRows(container, rows) {
+  const max = rows.length ? Math.max(...rows.map(([,count]) => count)) : 0;
+  if (!rows.length) {
+    container.innerHTML = '<div class="dashboard-empty">No dated records available.</div>';
+    return;
+  }
+  container.innerHTML = rows.map(([label, count]) => `
+    <div class="mini-row">
+      <span class="mini-label">${escapeHtml(label)}</span>
+      <div class="mini-track"><div class="mini-fill" style="width:${max ? (count / max) * 100 : 0}%"></div></div>
+      <span class="mini-count">${formatCompactNumber(count)}</span>
+    </div>`).join('');
+}
+function renderMonthlyTrend(container, rows) {
+  const max = rows.length ? Math.max(...rows.map(([,count]) => count)) : 0;
+  if (!rows.length) {
+    container.innerHTML = '<div class="dashboard-empty">No monthly trend data available for this scope.</div>';
+    return;
+  }
+  container.innerHTML = rows.map(([key, count]) => `
+    <div class="trend-col" title="${formatMonthKey(key)}: ${formatCompactNumber(count)}">
+      <span class="trend-value">${formatCompactNumber(count)}</span>
+      <div class="trend-bar" style="height:${max ? Math.max(6, (count / max) * 150) : 2}px"></div>
+      <span class="trend-label">${formatMonthKey(key)}</span>
+    </div>`).join('');
+}
+function renderWeekdays(container, rows) {
+  const max = rows.length ? Math.max(...rows.map(([,count]) => count)) : 0;
+  container.innerHTML = rows.map(([name, count]) => {
+    const intensity = max ? .10 + ((count / max) * .22) : .10;
+    return `<div class="weekday-cell" style="background:rgba(249,115,22,${intensity.toFixed(3)})"><div class="weekday-name">${name}</div><div class="weekday-count">${formatCompactNumber(count)}</div></div>`;
+  }).join('');
+}
+function renderDashboard() {
+  const rows = hasActiveFilters() ? VIEW : DATA;
+  const dates = rows.map(getValidDate).filter(Boolean).sort((a,b) => a - b);
+  const uniqueFeelings = new Set(rows.map(i => i["I am felling"]).filter(Boolean)).size;
+  const monthTrend = calculateMonthlyTrend(rows);
+  const avgMonthly = monthTrend.length ? Math.round(rows.length / monthTrend.length) : 0;
+  const latest = dates.length ? dates[dates.length - 1] : null;
+
+  document.getElementById('dashboardScope').textContent = currentFilterSummary(rows);
+  document.getElementById('dashboardFilterSummary').textContent = hasActiveFilters()
+    ? 'Dashboard is synced to the active portal filters. Reset filters to analyze the full archive.'
+    : 'Dashboard is showing the full loaded Supabase archive. Apply portal filters to narrow the analytics.';
+  document.getElementById('totalEntries').textContent = formatCompactNumber(DATA.length);
+  document.getElementById('filteredEntries').textContent = formatCompactNumber(rows.length);
+  document.getElementById('filteredNote').textContent = hasActiveFilters() ? 'Matching active filters.' : 'No filters applied.';
+  document.getElementById('uniqueFeelings').textContent = formatCompactNumber(uniqueFeelings);
+  document.getElementById('avgMonthly').textContent = formatCompactNumber(avgMonthly);
+  document.getElementById('latestEntryNote').textContent = latest ? `Latest entry: ${formatDate(latest.toISOString())}` : 'Latest entry: —';
+
+  renderBarList(document.getElementById('feelingStats'), calculateFeelingStats(rows, 12));
+  renderMiniRows(document.getElementById('yearStats'), calculateYearStats(rows));
+  renderMonthlyTrend(document.getElementById('monthlyTrend'), monthTrend);
+  renderWeekdays(document.getElementById('weekdayStats'), calculateWeekdayStats(rows));
 }
 function showDashboard() {
-  const stats = calculateFeelingStats(), max = stats.length ? Math.max(...stats.map(s=>s[1])) : 0;
-  document.getElementById('totalEntries').textContent = DATA.length;
-  document.getElementById('uniqueFeelings').textContent = new Set(DATA.map(i=>i["I am felling"]).filter(Boolean)).size;
-  const container = document.getElementById('feelingStats'); container.innerHTML = '';
-  stats.forEach(([feeling, count]) => {
-    const el = document.createElement('div'); el.className = 'qs-item';
-    el.innerHTML = `<span class="qs-name">${feeling}</span><div class="qs-bar-wrap"><div class="qs-bar" style="width:${max>0?(count/max)*100:0}%"></div></div><span class="qs-count">${count}</span>`;
-    container.appendChild(el);
-  });
-  dashDlg.showModal();
+  renderDashboard();
+  if (!dashDlg.open) dashDlg.showModal();
 }
 function applyFilters() {
   const q = FILTERS.q.toLowerCase();
@@ -844,6 +1050,7 @@ function applyFilters() {
     return FILTERS.sort === 'new' ? db-da : da-db;
   });
   renderGrid();
+  if (dashDlg.open) renderDashboard();
 }
 function renderGrid() {
   document.getElementById('totalCount').textContent = DATA.length;
@@ -913,6 +1120,7 @@ passwordEl.addEventListener('keydown', e => { if (e.key==='Enter') attemptLogin(
 logoutBtn.addEventListener('click', showLogin);
 dashboardBtn.addEventListener('click', showDashboard);
 closeQsBtn.addEventListener('click', () => dashDlg.close());
+document.getElementById('dashboardRefreshBtn').addEventListener('click', renderDashboard);
 extDashBtn.addEventListener('click', showDashboard);
 footerDashBtn.addEventListener('click', showDashboard);
 
