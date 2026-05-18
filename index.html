@@ -103,13 +103,23 @@
     }
   }
 
-  /* laptop / desktop — keep the focused VENT column, but let it resize gracefully */
+  /* laptop / desktop — morph from phone portrait into the intended 900 × 700 PC frame */
   @media (min-width: 1024px) {
-    #root { padding: clamp(28px, 4.5vw, 56px); }
+    #root { padding: clamp(18px, 2.2vw, 32px); }
     .app-shell {
-      width: min(540px, clamp(440px, 38vw, 540px));
-      height: min(920px, calc(100dvh - clamp(56px, 9vw, 112px)));
-      max-width: calc(100vw - clamp(56px, 9vw, 112px));
+      --screen-padding: clamp(26px, 3.2vw, 38px);
+      --hero-padding: clamp(70px, 10vh, 96px) clamp(42px, 6vw, 72px) 42px;
+      --thanks-padding: clamp(64px, 9vh, 92px) clamp(42px, 6vw, 72px) 42px;
+      --breath-halo-size: clamp(220px, 24vw, 280px);
+      --breath-ring-size: clamp(184px, 20vw, 224px);
+      --breath-inner-size: clamp(138px, 15vw, 168px);
+      --breath-count-size: clamp(48px, 5vw, 60px);
+      width: min(900px, calc(100vw - clamp(36px, 4.4vw, 64px)));
+      height: min(700px, calc(100dvh - clamp(36px, 4vw, 64px)));
+      max-width: 900px;
+      max-height: 700px;
+      aspect-ratio: 9 / 7;
+      border-radius: clamp(18px, 2vw, 26px);
     }
   }
 
@@ -130,13 +140,35 @@
     }
   }
 
+  /* landscape laptops/PCs should keep the wider app format instead of falling back to a narrow phone column */
+  @media (min-width: 900px) and (max-height: 760px) {
+    #root { padding: clamp(0px, calc((100dvh - 700px) / 2), 24px); }
+    .app-shell {
+      width: min(900px, 100vw);
+      height: min(700px, 100dvh);
+      max-width: 900px;
+      max-height: 700px;
+      border-radius: clamp(14px, 1.8vw, 22px);
+    }
+  }
+
+  /* exact 900 × 700 browser windows should use the whole available format */
+  @media (min-width: 900px) and (max-width: 980px) and (min-height: 660px) and (max-height: 760px) {
+    #root { padding: 0; }
+    .app-shell {
+      width: min(900px, 100vw);
+      height: min(700px, 100dvh);
+      border-radius: 0;
+    }
+  }
+
   @supports not (height: 100dvh) {
     .app-shell { height: 100vh; }
     @media (min-width: 640px) {
       .app-shell { height: min(900px, calc(100vh - clamp(40px, 8vw, 80px))); }
     }
     @media (min-width: 1024px) {
-      .app-shell { height: min(920px, calc(100vh - clamp(56px, 9vw, 112px))); }
+      .app-shell { height: min(700px, calc(100vh - clamp(36px, 4vw, 64px))); }
     }
   }
 

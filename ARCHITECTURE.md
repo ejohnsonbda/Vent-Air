@@ -94,7 +94,7 @@ Anton is a condensed display face that gives VENT its editorial, intense persona
 │   │                             │   │
 │   │         .app-shell          │   │  Mobile: width 100%, height 100%
 │   │                             │   │  Tablet: 420px × 840px centered
-│   │    ┌─────────────────┐      │   │  Laptop: 420px × 900px centered
+│   │    ┌─────────────────┐      │   │  Laptop/PC: morphs up to 900px × 700px centered
 │   │    │  <CurrentScreen>│      │   │
 │   │    └─────────────────┘      │   │
 │   │                             │   │
@@ -194,8 +194,8 @@ The portal is a traditional top-to-bottom document layout (no fixed-height shell
 | < 400px | Full-screen shell | Filters stack to 1 column |
 | 400–600px | Full-screen shell | Filters stack to 2 columns |
 | 600–640px | Full-screen shell | Filters at 3 columns |
-| 640–1024px | 420×840px centered shell | Cards at 2 columns |
-| ≥ 1024px | 420×900px centered shell | Cards at 3 columns |
+| 640–1024px | 420×840px centered shell, except short landscape windows can widen toward the desktop frame | Cards at 2 columns |
+| ≥ 1024px | Morphs to a centered desktop shell capped at 900×700px | Cards at 3 columns |
 
 ---
 
@@ -292,13 +292,14 @@ The `ID`, `Created Date`, and `Updated Date` fields are auto-populated by Supaba
 
 ### PWA Configuration
 
-`manifest.json` registers the app as an installable PWA:
+`manifest.json` registers the app as an installable PWA. The manifest uses `orientation: "any"` so desktop and installed-app windows can adopt the wider 900×700 format instead of being forced into portrait:
 
 ```json
 {
   "name": "VENT",
   "short_name": "VENT",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#0B0B0B",
   "theme_color": "#0B0B0B",
   "start_url": "/",

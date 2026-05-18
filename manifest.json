@@ -4,7 +4,7 @@
   "description": "A place to set it down. Anonymous. No account. No trace.",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#0B0B0B",
   "theme_color": "#0B0B0B",
   "icons": [
