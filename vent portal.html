@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VentSafer — Secure Case Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ─── Design Tokens ─────────────────────────────────────────── */
+:root {
+  --brand:       #f97316;
+  --brand-dark:  #ea580c;
+  --brand-glow:  rgba(249,115,22,.22);
+
+  --surface-0:   #0c0c0f;
+  --surface-1:   #111116;
+  --surface-2:   #18181f;
+  --surface-3:   #222230;
+  --surface-4:   #2a2a3a;
+
+  --text-primary:   #f1f1f5;
+  --text-secondary: #9898b0;
+  --text-muted:     #5a5a72;
+
+  --border:       rgba(255,255,255,.07);
+  --border-hover: rgba(249,115,22,.35);
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  --shadow-sm:    0 1px 3px rgba(0,0,0,.4);
+  --shadow-md:    0 4px 16px rgba(0,0,0,.5);
+  --shadow-lg:    0 12px 40px rgba(0,0,0,.6);
+  --shadow-brand: 0 0 40px rgba(249,115,22,.18);
+
+  --transition: 0.2s cubic-bezier(.4,0,.2,1);
+}
+
+/* ─── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Login ──────────────────────────────────────────────────── */
+#loginOverlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  background: var(--surface-0);
+  overflow: hidden;
+}
+#loginOverlay.hidden { display: none; }
+
+.login-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.blob {
+  position: absolute; border-radius: 50%;
+  filter: blur(90px); opacity: .1;
+  animation: bfloat 10s ease-in-out infinite;
+}
+.blob-1 { width: 520px; height: 520px; background: var(--brand); top: -160px; left: -120px; animation-delay: 0s; }
+.blob-2 { width: 420px; height: 420px; background: #8b5cf6; bottom: -120px; right: -120px; animation-delay: -5s; }
+.blob-3 { width: 320px; height: 320px; background: #06b6d4; top: 50%; left: 50%; transform: translate(-50%,-50%); animation-delay: -2.5s; }
+@keyframes bfloat {
+  0%,100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-28px) scale(1.04); }
+}
+
+.login-card {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 420px;
+  background: rgba(17,17,22,.88);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg), var(--shadow-brand);
+  overflow: hidden;
+  animation: slideUp .45s cubic-bezier(.4,0,.2,1);
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.login-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--brand), transparent);
+}
+.login-inner { padding: 40px; }
+
+.login-logo-row { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; }
+.login-logo {
+  width: 52px; height: 52px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 18px; color: #fff;
+  box-shadow: 0 4px 20px var(--brand-glow);
+  flex-shrink: 0;
+}
+.login-brand { font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
+.login-brand-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; letter-spacing: .6px; text-transform: uppercase; }
+
+.login-h { font-size: 26px; font-weight: 700; letter-spacing: -.5px; margin-bottom: 6px; }
+.login-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 28px; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px; }
+.field input {
+  width: 100%; padding: 13px 16px;
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: var(--radius-md); color: var(--text-primary);
+  font-family: inherit; font-size: 15px; outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.field input::placeholder { color: var(--text-muted); }
+.field input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-glow); }
+
+.error-msg {
+  display: none; padding: 10px 14px;
+  background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3);
+  border-radius: var(--radius-sm); color: #f87171; font-size: 13px; margin-bottom: 16px;
+}
+.error-msg.show { display: block; }
+.loading-msg { display: none; text-align: center; font-size: 13px; color: var(--text-muted); padding: 8px; margin-bottom: 8px; }
+
+.login-actions { display: flex; gap: 10px; margin-top: 8px; }
+.btn-primary {
+  flex: 1; padding: 13px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  border: none; border-radius: var(--radius-md);
+  color: #fff; font-family: inherit; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  box-shadow: 0 4px 16px var(--brand-glow);
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px var(--brand-glow); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-ghost {
+  padding: 13px 18px;
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: var(--radius-md); color: var(--text-secondary);
+  font-family: inherit; font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: all var(--transition);
+}
+.btn-ghost:hover { background: var(--surface-4); border-color: var(--border-hover); color: var(--text-primary); }
+
+/* ─── App ────────────────────────────────────────────────────── */
+#app { display: block; }
+#app.hidden { display: none; }
+
+/* ─── Header ─────────────────────────────────────────────────── */
+header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(12,12,15,.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.hdr {
+  max-width: 1280px; margin: 0 auto; padding: 0 24px;
+  height: 64px; display: flex; align-items: center; gap: 14px;
+}
+.hdr-logo {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 14px; color: #fff; flex-shrink: 0;
+}
+.hdr-title { font-size: 16px; font-weight: 700; letter-spacing: -.2px; }
+.hdr-badge {
+  font-size: 11px; font-weight: 500; color: var(--text-muted);
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 10px; letter-spacing: .3px;
+}
+.hdr-spacer { flex: 1; }
+.hdr-actions { display: flex; align-items: center; gap: 10px; }
+.hdr-user { font-size: 13px; color: var(--text-secondary); }
+.hdr-user strong { color: var(--text-primary); }
+.hdr-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px;
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-secondary);
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; text-decoration: none;
+  transition: all var(--transition);
+}
+.hdr-btn:hover { background: var(--surface-4); border-color: var(--border-hover); color: var(--text-primary); }
+.hdr-btn.accent {
+  background: rgba(249,115,22,.1); border-color: rgba(249,115,22,.22); color: var(--brand);
+}
+.hdr-btn.accent:hover { background: rgba(249,115,22,.18); border-color: var(--brand); }
+
+/* ─── Hero ───────────────────────────────────────────────────── */
+.hero {
+  position: relative; overflow: hidden;
+  background:
+    linear-gradient(to bottom, rgba(12,12,15,.65) 0%, rgba(12,12,15,.96) 100%),
+    url('./tmbg.jpg') center / cover no-repeat;
+  border-bottom: 1px solid var(--border);
+  padding: 64px 24px 48px;
+}
+.hero-inner { max-width: 860px; margin: 0 auto; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--brand); background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.2);
+  border-radius: 20px; padding: 5px 14px; margin-bottom: 20px;
+}
+.hero-eyebrow::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--brand); animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+.hero-title {
+  font-size: clamp(28px, 4vw, 42px); font-weight: 800;
+  letter-spacing: -1px; line-height: 1.1; margin-bottom: 14px;
+}
+.hero-title span { color: var(--brand); }
+.hero-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 10px; max-width: 680px; }
+.hero-alert {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 13px 16px;
+  background: rgba(249,115,22,.07); border: 1px solid rgba(249,115,22,.18);
+  border-left: 3px solid var(--brand); border-radius: var(--radius-md);
+  margin-bottom: 36px; font-size: 13px; color: #fdba74; line-height: 1.5;
+}
+.hero-alert svg { flex-shrink: 0; margin-top: 1px; }
+
+/* Search */
+.search-box {
+  background: rgba(17,17,22,.82); backdrop-filter: blur(12px);
+  border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px;
+}
+.search-lbl { font-size: 11px; font-weight: 600; letter-spacing: .8px; text-transform: uppercase; color: var(--brand); margin-bottom: 10px; display: block; }
+.search-wrap { position: relative; }
+.search-ico { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+#q {
+  width: 100%; padding: 14px 16px 14px 46px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-md); color: var(--text-primary);
+  font-family: inherit; font-size: 15px; outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+#q::placeholder { color: var(--text-muted); }
+#q:focus { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-glow); }
+.search-hint { font-size: 12px; color: var(--text-muted); margin-top: 10px; text-align: center; }
+
+/* ─── Filters ────────────────────────────────────────────────── */
+.filters-bar {
+  background: var(--surface-1); border-bottom: 1px solid var(--border); padding: 18px 24px;
+}
+.filters-inner { max-width: 1280px; margin: 0 auto; }
+  .filters-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto; gap: 12px; align-items: end;
+}
+@media (max-width: 1100px) { .filters-grid { grid-template-columns: 1fr 1fr 1fr; } }
+@media (max-width: 600px) { .filters-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 400px) { .filters-grid { grid-template-columns: 1fr; } }
+
+.fg label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 7px; }
+.fg select, .fg input[type="date"] {
+  width: 100%; padding: 9px 12px;
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-primary);
+  font-family: inherit; font-size: 13px; outline: none;
+  transition: border-color var(--transition); appearance: none; cursor: pointer;
+}
+.fg select:focus, .fg input[type="date"]:focus { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand-glow); }
+.fg select option { background: var(--surface-2); }
+.fg input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.6); cursor: pointer; }
+
+.btn-reset {
+  padding: 9px 18px;
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-secondary);
+  font-family: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; white-space: nowrap; transition: all var(--transition);
+}
+.btn-reset:hover { background: var(--surface-4); border-color: var(--border-hover); color: var(--text-primary); }
+
+.year-btns {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px;
+}
+.year-btns-label {
+  font-size: 11px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase;
+  color: var(--text-muted); margin-right: 4px;
+}
+.yr-btn {
+  padding: 6px 18px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .18s ease; font-family: inherit;
+}
+.yr-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(249,115,22,.08); }
+.yr-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 12px rgba(249,115,22,.35); }
+.yr-btn-all.active { background: var(--surface-2); border-color: var(--border); color: var(--text-primary); box-shadow: none; }
+.stats-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.stat-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px; background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: 20px; font-size: 12px; color: var(--text-secondary);
+}
+.stat-chip strong { color: var(--brand); font-weight: 700; }
+
+/* ─── Grid ───────────────────────────────────────────────────── */
+.main-wrap { max-width: 1280px; margin: 0 auto; padding: 28px 24px 90px; }
+.cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+@media (max-width: 1024px) { .cards-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .cards-grid { grid-template-columns: 1fr; } }
+
+/* ─── Card ───────────────────────────────────────────────────── */
+.card {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden; cursor: pointer;
+  display: flex; flex-direction: column; min-height: 200px;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--border-hover); }
+
+.card-hdr {
+  padding: 15px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+}
+.feeling-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; letter-spacing: .2px;
+  background: rgba(249,115,22,.1); color: var(--brand); border: 1px solid rgba(249,115,22,.18);
+}
+.card-id-tag {
+  font-size: 11px; color: var(--text-muted); background: var(--surface-3);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 3px 8px; font-weight: 500; white-space: nowrap;
+}
+.card-meta {
+  padding: 9px 18px; display: flex; gap: 14px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+}
+.meta-item { font-size: 12px; color: var(--text-muted); }
+.meta-item strong { color: var(--text-secondary); font-weight: 500; }
+.card-body { padding: 15px 18px; flex: 1; }
+.card-snippet {
+  font-size: 14px; line-height: 1.6; color: var(--text-secondary);
+  display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────── */
+.footer-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(12,12,15,.92); backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border); padding: 12px 24px;
+  display: flex; align-items: center; justify-content: space-between; z-index: 40;
+}
+.footer-note { font-size: 13px; color: var(--text-muted); }
+.footer-link { color: var(--brand); text-decoration: none; font-weight: 500; transition: opacity var(--transition); }
+.footer-link:hover { opacity: .75; }
+
+/* ─── Modals ─────────────────────────────────────────────────── */
+dialog {
+  border: none; border-radius: var(--radius-xl); padding: 0;
+  background: var(--surface-2); border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg); max-width: 600px; width: 92vw;
+  color: var(--text-primary);
+  /* Force true viewport center */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+}
+dialog::backdrop { background: rgba(0,0,0,.72); backdrop-filter: blur(6px); }
+
+.modal-hdr {
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.modal-title-row { display: flex; align-items: center; gap: 10px; }
+.modal-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--surface-3); border: 1px solid var(--border);
+  color: var(--text-secondary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; line-height: 1; transition: all var(--transition); flex-shrink: 0;
+}
+.modal-close:hover { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+.modal-bd {
+  padding: 22px; max-height: 65vh; overflow-y: auto;
+}
+.modal-bd::-webkit-scrollbar { width: 4px; }
+.modal-bd::-webkit-scrollbar-track { background: transparent; }
+.modal-bd::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 2px; }
+
+.detail-text {
+  font-size: 15px; line-height: 1.7; color: var(--text-secondary);
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 16px; white-space: pre-wrap; margin-bottom: 18px;
+}
+.detail-grid { display: grid; grid-template-columns: 110px 1fr; gap: 8px; }
+.detail-lbl {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--text-muted); padding: 10px 12px;
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); display: flex; align-items: center;
+}
+.detail-val {
+  font-size: 13px; color: var(--text-secondary); padding: 10px 12px;
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); display: flex; align-items: center; word-break: break-all;
+}
+
+/* Quick Stats */
+#dashboardDlg { max-width: 500px; }
+.qs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 22px; }
+.qs-stat {
+  background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 16px; text-align: center;
+}
+.qs-val { font-size: 32px; font-weight: 800; color: var(--brand); line-height: 1; margin-bottom: 6px; }
+.qs-lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); }
+
+.qs-list { display: flex; flex-direction: column; gap: 8px; }
+.qs-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; background: var(--surface-3); border: 1px solid var(--border);
+  border-radius: var(--radius-md); transition: border-color var(--transition);
+}
+.qs-item:hover { border-color: var(--border-hover); }
+.qs-name { flex: 1; font-size: 13px; font-weight: 500; }
+.qs-bar-wrap { flex: 1.5; height: 5px; background: var(--surface-4); border-radius: 3px; overflow: hidden; }
+.qs-bar { height: 100%; background: linear-gradient(90deg, var(--brand), var(--brand-dark)); border-radius: 3px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+.qs-count { font-size: 13px; font-weight: 700; color: var(--brand); min-width: 30px; text-align: right; }
+
+/* Empty */
+.empty-state { grid-column: 1/-1; text-align: center; padding: 80px 20px; color: var(--text-muted); }
+.empty-state svg { opacity: .25; margin-bottom: 14px; }
+.empty-state p { font-size: 15px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--surface-1); }
+::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginOverlay" aria-live="polite">
+  <div class="login-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+  <div class="login-card">
+    <div class="login-inner">
+      <div class="login-logo-row">
+        <div class="login-logo">VS</div>
+        <div>
+          <div class="login-brand">VentSafer</div>
+          <div class="login-brand-sub">Secure Portal</div>
+        </div>
+      </div>
+      <h1 class="login-h">Welcome back</h1>
+      <p class="login-sub">Sign in to access the secure administration console.</p>
+      <form onsubmit="return false;">
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" type="text" placeholder="Enter your username" autofocus autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password" />
+        </div>
+        <p id="loginError" class="error-msg">Invalid credentials. Please try again.</p>
+        <div id="loadingMsg" class="loading-msg">Loading credentials…</div>
+        <div class="login-actions">
+          <button type="button" id="loginBtn" class="btn-primary">Sign In</button>
+          <button type="button" id="clearBtn" class="btn-ghost">Clear</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+
+  <header>
+    <div class="hdr">
+      <div class="hdr-logo">VS</div>
+      <span class="hdr-title">VentSafer</span>
+      <span class="hdr-badge">Secure Portal v2.4</span>
+      <div class="hdr-spacer"></div>
+      <div class="hdr-actions">
+        <a href="./dashboard.html" id="externalDashboardBtn" class="hdr-btn accent" target="_blank">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <button id="dashboardBtn" class="hdr-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-8"/></svg>
+          Quick Stats
+        </button>
+        <span class="hdr-user">User: <strong id="currentUser">—</strong></span>
+        <button id="logoutBtn" class="hdr-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">Secure Administration Console</div>
+      <h2 class="hero-title">Emotional Intelligence<br><span>Database Portal</span></h2>
+      <p class="hero-desc">Monitor and analyze anonymized user submissions with the highest standards of data protection. All entries are encrypted at rest and in transit.</p>
+      <div class="hero-alert">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span><strong>Security Protocol:</strong> This console contains Level 3 confidential data. Unauthorized access or distribution violates corporate policy and international data protection regulations.</span>
+      </div>
+      <div class="search-box">
+        <span class="search-lbl">Database Query Interface</span>
+        <div class="search-wrap">
+          <svg class="search-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input id="q" type="search" placeholder="Search by text, ID, or encrypted UUID…" />
+        </div>
+        <p class="search-hint">Real-time search across the encrypted emotional intelligence database</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="filters-bar">
+    <div class="filters-inner">
+      <div class="filters-grid">
+        <div class="fg">
+          <label for="feeling">Feeling</label>
+          <select id="feeling"><option value="">All feelings</option></select>
+        </div>
+        <div class="fg">
+          <label for="year">Year</label>
+          <select id="year"><option value="">All years</option></select>
+        </div>
+        <div class="fg">
+          <label for="dateFrom">From</label>
+          <input id="dateFrom" type="date" />
+        </div>
+        <div class="fg">
+          <label for="dateTo">To</label>
+          <input id="dateTo" type="date" />
+        </div>
+        <div class="fg">
+          <label for="sort">Sort</label>
+          <select id="sort">
+            <option value="new">Newest first</option>
+            <option value="old">Oldest first</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>&nbsp;</label>
+          <button class="btn-reset" id="resetBtn">Reset</button>
+        </div>
+      </div>
+      <div class="year-btns">
+        <span class="year-btns-label">Quick Year:</span>
+        <button class="yr-btn" data-year="2023">2023</button>
+        <button class="yr-btn" data-year="2024">2024</button>
+        <button class="yr-btn" data-year="2025">2025</button>
+        <button class="yr-btn" data-year="2026">2026</button>
+        <button class="yr-btn yr-btn-all" data-year="">All</button>
+      </div>
+      <div class="stats-bar">
+        <span class="stat-chip">Showing <strong id="shownCount">0</strong></span>
+        <span class="stat-chip">Total <strong id="totalCount">0</strong></span>
+        <span class="stat-chip">Feelings <strong id="feelingCount">0</strong></span>
+        <span class="stat-chip" id="yearChip" style="display:none">Year <strong id="yearChipVal"></strong></span>
+      </div>
+    </div>
+  </section>
+
+  <main class="main-wrap">
+    <div id="grid" class="cards-grid"></div>
+  </main>
+
+  <div class="footer-bar">
+    <span class="footer-note">Click any card to view full entry details</span>
+    <a href="./dashboard.html" class="footer-link">Open Full Dashboard →</a>
+  </div>
+
+  <!-- Detail Modal -->
+  <dialog id="detailDlg">
+    <div class="modal-hdr">
+      <div class="modal-title-row">
+        <span id="dlgFeeling" class="feeling-badge"></span>
+        <span id="dlgId" class="card-id-tag"></span>
+      </div>
+      <button class="modal-close" id="closeDlg" aria-label="Close">×</button>
+    </div>
+    <div class="modal-bd">
+      <div class="detail-text" id="dlgText"></div>
+      <div class="detail-grid">
+        <div class="detail-lbl">Created</div><div class="detail-val" id="dlgCreated"></div>
+        <div class="detail-lbl">Updated</div><div class="detail-val" id="dlgUpdated"></div>
+        <div class="detail-lbl">Owner</div><div class="detail-val" id="dlgOwner"></div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Quick Stats Modal -->
+  <dialog id="dashboardDlg">
+    <div class="modal-hdr">
+      <div>
+        <div style="font-size:16px;font-weight:700">Emotional Analytics</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:3px">Top 10 most frequent emotional states</div>
+      </div>
+      <button class="modal-close" id="closeDashboardBtn" aria-label="Close">×</button>
+    </div>
+    <div class="modal-bd">
+      <div class="qs-grid">
+        <div class="qs-stat"><div class="qs-val" id="totalEntries">0</div><div class="qs-lbl">Total Entries</div></div>
+        <div class="qs-stat"><div class="qs-val" id="uniqueFeelings">0</div><div class="qs-lbl">Unique Feelings</div></div>
+      </div>
+      <div class="qs-list" id="feelingStats"></div>
+      <div style="margin-top:14px;font-size:12px;color:var(--text-muted);text-align:center">
+        Data updates in real-time. &nbsp;<a href="./dashboard.html" class="footer-link">Open Full Dashboard →</a>
+      </div>
+    </div>
+  </dialog>
+
+</div>
+
+<script>
+const loginOverlay  = document.getElementById('loginOverlay');
+const appView       = document.getElementById('app');
+const usernameEl    = document.getElementById('username');
+const passwordEl    = document.getElementById('password');
+const loginError    = document.getElementById('loginError');
+const loadingMsg    = document.getElementById('loadingMsg');
+const loginBtn      = document.getElementById('loginBtn');
+const clearBtn      = document.getElementById('clearBtn');
+const logoutBtn     = document.getElementById('logoutBtn');
+const currentUserEl = document.getElementById('currentUser');
+const dashboardBtn  = document.getElementById('dashboardBtn');
+const extDashBtn    = document.getElementById('externalDashboardBtn');
+const dashDlg       = document.getElementById('dashboardDlg');
+const closeQsBtn    = document.getElementById('closeDashboardBtn');
+
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+
+const els = {
+  grid:$('#grid'), q:$('#q'), feeling:$('#feeling'),
+  from:$('#dateFrom'), to:$('#dateTo'), sort:$('#sort'), reset:$('#resetBtn'),
+  dlg:$('#detailDlg'), dlgFeeling:$('#dlgFeeling'), dlgId:$('#dlgId'),
+  dlgText:$('#dlgText'), dlgCreated:$('#dlgCreated'), dlgUpdated:$('#dlgUpdated'),
+  dlgOwner:$('#dlgOwner'), closeDlg:$('#closeDlg'),
+};
+
+let DATA = [], VALID_CREDENTIALS = [], FILTERS = {q:'',feeling:'',year:'',from:'',to:'',sort:'new'}, VIEW = [], credentialsLoaded = false;
+
+function showApp() {
+  loginOverlay.classList.add('hidden'); appView.classList.remove('hidden');
+  sessionStorage.setItem('vs-auth','ok'); sessionStorage.setItem('vs-user', usernameEl.value.trim());
+  currentUserEl.textContent = usernameEl.value.trim(); loadData();
+}
+function showLogin() {
+  appView.classList.add('hidden'); loginOverlay.classList.remove('hidden');
+  sessionStorage.removeItem('vs-auth'); sessionStorage.removeItem('vs-user');
+  usernameEl.value = ''; passwordEl.value = ''; loginError.classList.remove('show');
+}
+function attemptLogin() {
+  if (!credentialsLoaded) { loginError.textContent = 'Credentials still loading…'; loginError.classList.add('show'); return; }
+  const u = usernameEl.value.trim(), p = passwordEl.value;
+  if (VALID_CREDENTIALS.some(c => c.username === u && c.password === p)) {
+    loginError.classList.remove('show'); showApp();
+  } else {
+    loginError.textContent = 'Invalid credentials. Please try again.'; loginError.classList.add('show');
+    passwordEl.value = ''; passwordEl.focus();
+  }
+}
+function parseCredentials(data) {
+  if (Array.isArray(data)) return data;
+  if (data.credentials && Array.isArray(data.credentials)) return data.credentials;
+  if (data.users && Array.isArray(data.users)) return data.users;
+  if (typeof data === 'object') return Object.entries(data).map(([username, password]) => ({username, password: String(password)}));
+  return [];
+}
+async function loadCredentials() {
+  try {
+    loadingMsg.style.display = 'block';
+    const res = await fetch('./passcore.json?' + Date.now());
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const parsed = parseCredentials(JSON.parse(await res.text())).filter(c => c.username && c.password);
+    VALID_CREDENTIALS = [...parsed, {username:'admin', password:'8804114'}];
+  } catch(e) {
+    VALID_CREDENTIALS = [{username:'admin', password:'8804114'}];
+    loginError.textContent = `Could not load passcore.json: ${e.message}. Using fallback.`;
+    loginError.classList.add('show');
+  } finally {
+    credentialsLoaded = true; loadingMsg.style.display = 'none';
+    if (sessionStorage.getItem('vs-auth') === 'ok') {
+      currentUserEl.textContent = sessionStorage.getItem('vs-user') || 'admin';
+      loginOverlay.classList.add('hidden'); appView.classList.remove('hidden'); loadData();
+    }
+  }
+}
+async function loadData() {
+  try {
+    const res = await fetch('./evault_core.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    DATA = Array.isArray(json) ? json : (Object.values(json).find(v => Array.isArray(v)) || []);
+    if (!DATA.length) DATA = getSampleData();
+  } catch { DATA = getSampleData(); }
+  initializeApp();
+}
+function getSampleData() {
+  return [
+    {"Created Date":"2024-12-14T09:58:27Z","I am felling":"Insecurity","vb_Anonymous":"I really enjoy talking about philosophy especially with my grandpa because even if we disagree it's really interesting and fun but if I even try to talk to my mom about it she belittles me and acts like I'm so stupid.","ID":"00vc1","Updated Date":"2024-12-14T09:58:27Z","Owner":"76471ebd-28d1-4f68-81f3-10283faa90e7"},
+    {"Created Date":"2024-04-08T04:37:00Z","I am felling":"Boredom","vb_Anonymous":"Bored out of my mind. Nothing feels interesting anymore.","ID":"00vc2","Updated Date":"2024-04-08T04:37:00Z","Owner":"d499a448-6d10-4b6d-aa89-ed800c8331b5"},
+    {"Created Date":"2024-06-30T22:10:32Z","I am felling":"Confusion","vb_Anonymous":"I don't know who or what I am anymore. I'm sick of being made out as the calm sweet person when inside I'm anything but.","ID":"00vc3","Updated Date":"2024-06-30T22:10:32Z","Owner":"652a77d5-df29-4a3b-a240-cd56ca9fd292"},
+  ];
+}
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? iso : d.toLocaleString('en-US', {year:'numeric',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+function buildFeelingList() {
+  const feelings = [...new Set(DATA.map(i => i["I am felling"]).filter(Boolean))].sort();
+  els.feeling.innerHTML = '<option value="">All feelings</option>' + feelings.map(f => `<option value="${f}">${f}</option>`).join('');
+  const el = document.getElementById('feelingCount'); if (el) el.textContent = feelings.length;
+}
+function buildYearList() {
+  const years = [...new Set(DATA.map(i => {
+    const d = new Date(i["Created Date"]); return isNaN(d.getTime()) ? null : d.getFullYear();
+  }).filter(Boolean))].sort((a,b) => b - a);
+  const yearSel = document.getElementById('year');
+  yearSel.innerHTML = '<option value="">All years</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+}
+function calculateFeelingStats() {
+  const counts = {};
+  DATA.forEach(i => { const f = i["I am felling"]; if (f) counts[f] = (counts[f]||0)+1; });
+  return Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,10);
+}
+function showDashboard() {
+  const stats = calculateFeelingStats(), max = stats.length ? Math.max(...stats.map(s=>s[1])) : 0;
+  document.getElementById('totalEntries').textContent = DATA.length;
+  document.getElementById('uniqueFeelings').textContent = new Set(DATA.map(i=>i["I am felling"]).filter(Boolean)).size;
+  const container = document.getElementById('feelingStats'); container.innerHTML = '';
+  stats.forEach(([feeling, count]) => {
+    const el = document.createElement('div'); el.className = 'qs-item';
+    el.innerHTML = `<span class="qs-name">${feeling}</span><div class="qs-bar-wrap"><div class="qs-bar" style="width:${max>0?(count/max)*100:0}%"></div></div><span class="qs-count">${count}</span>`;
+    container.appendChild(el);
+  });
+  dashDlg.showModal();
+}
+function applyFilters() {
+  const q = FILTERS.q.toLowerCase();
+  VIEW = DATA.filter(d => {
+    if (FILTERS.feeling && d["I am felling"] !== FILTERS.feeling) return false;
+    if (FILTERS.year) {
+      const dd = new Date(d["Created Date"]); if (isNaN(dd.getTime()) || dd.getFullYear() !== parseInt(FILTERS.year)) return false;
+    }
+    if (FILTERS.from && new Date(d["Created Date"]) < new Date(FILTERS.from+"T00:00:00")) return false;
+    if (FILTERS.to   && new Date(d["Created Date"]) > new Date(FILTERS.to+"T23:59:59.999")) return false;
+    if (q && !JSON.stringify(d).toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b) => {
+    const da = new Date(a["Created Date"]), db = new Date(b["Created Date"]);
+    return FILTERS.sort === 'new' ? db-da : da-db;
+  });
+  renderGrid();
+}
+function renderGrid() {
+  document.getElementById('totalCount').textContent = DATA.length;
+  document.getElementById('shownCount').textContent = VIEW.length;
+  if (!VIEW.length) {
+    els.grid.innerHTML = `<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>No entries match your current filters.</p></div>`;
+    return;
+  }
+  els.grid.innerHTML = VIEW.map(item => `
+    <article class="card" data-id="${item.ID}">
+      <div class="card-hdr">
+        <span class="feeling-badge">${item["I am felling"] || '—'}</span>
+        <span class="card-id-tag">${item.ID}</span>
+      </div>
+      <div class="card-meta">
+        <span class="meta-item"><strong>Created&nbsp;</strong>${formatDate(item["Created Date"])}</span>
+        <span class="meta-item"><strong>Owner&nbsp;</strong>${(item.Owner||'—').substring(0,8)}…</span>
+      </div>
+      <div class="card-body">
+        <p class="card-snippet">${(item.vb_Anonymous||'').replace(/</g,'&lt;')}</p>
+      </div>
+    </article>`).join('');
+  $$('.card').forEach(c => { c.onclick = () => openDetail(c.dataset.id); });
+}
+function openDetail(id) {
+  const item = DATA.find(d => d.ID === id); if (!item) return;
+  els.dlgFeeling.textContent = item["I am felling"] || '—';
+  els.dlgId.textContent = item.ID || '';
+  els.dlgText.textContent = item.vb_Anonymous || '';
+  els.dlgCreated.textContent = formatDate(item["Created Date"]);
+  els.dlgUpdated.textContent = formatDate(item["Updated Date"]);
+  els.dlgOwner.textContent = item.Owner || '—';
+  els.dlg.showModal();
+}
+function initializeApp() {
+  buildFeelingList();
+  buildYearList();
+  els.closeDlg.onclick = () => els.dlg.close();
+  els.q.oninput = e => { FILTERS.q = e.target.value; applyFilters(); };
+  els.feeling.onchange = e => { FILTERS.feeling = e.target.value; applyFilters(); };
+  function setYearFilter(yr) {
+    FILTERS.year = yr;
+    document.getElementById('year').value = yr;
+    const chip = document.getElementById('yearChip'), val = document.getElementById('yearChipVal');
+    if (yr) { chip.style.display='inline-flex'; val.textContent = yr; } else { chip.style.display='none'; }
+    document.querySelectorAll('.yr-btn').forEach(b => b.classList.toggle('active', b.dataset.year === yr));
+    applyFilters();
+  }
+  document.getElementById('year').onchange = e => setYearFilter(e.target.value);
+  document.querySelectorAll('.yr-btn').forEach(b => b.addEventListener('click', () => setYearFilter(b.dataset.year)));
+  els.from.onchange = e => { FILTERS.from = e.target.value; applyFilters(); };
+  els.to.onchange = e => { FILTERS.to = e.target.value; applyFilters(); };
+  els.sort.onchange = e => { FILTERS.sort = e.target.value; applyFilters(); };
+  els.reset.onclick = () => {
+    FILTERS = {q:'',feeling:'',year:'',from:'',to:'',sort:'new'};
+    els.q.value=''; els.feeling.value=''; els.from.value=''; els.to.value=''; els.sort.value='new';
+    setYearFilter('');
+    applyFilters();
+  };
+  applyFilters();
+}
+
+loginBtn.addEventListener('click', attemptLogin);
+clearBtn.addEventListener('click', () => { usernameEl.value=''; passwordEl.value=''; loginError.classList.remove('show'); usernameEl.focus(); });
+usernameEl.addEventListener('keydown', e => { if (e.key==='Enter') attemptLogin(); });
+passwordEl.addEventListener('keydown', e => { if (e.key==='Enter') attemptLogin(); });
+logoutBtn.addEventListener('click', showLogin);
+dashboardBtn.addEventListener('click', showDashboard);
+closeQsBtn.addEventListener('click', () => dashDlg.close());
+extDashBtn.addEventListener('click', e => {
+  if (sessionStorage.getItem('vs-auth') === 'ok') {
+    const url = new URL(e.currentTarget.href, location.href);
+    url.searchParams.set('auth','ok'); url.searchParams.set('user', sessionStorage.getItem('vs-user')||currentUserEl.textContent);
+    e.currentTarget.href = url.toString();
+  }
+});
+
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  if (e.key === 'F12') { e.preventDefault(); return false; }
+  if (e.ctrlKey && ['u','s','p'].includes(e.key)) { e.preventDefault(); return false; }
+});
+
+loadCredentials();
+</script>
+</body>
+</html>
