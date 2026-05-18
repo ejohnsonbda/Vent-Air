@@ -927,13 +927,9 @@ function App() {
       setState(s => ({ ...s, lastRoute: s.route, route: 'submitting', submitError: null }));
       try {
         const { error } = await db.from('vents').insert({
-          text:           state.vent,
-          emotion_key:    state.emotion?.key    ?? null,
-          emotion_label:  state.emotion?.label  ?? null,
-          emotion_family: state.emotion?.family ?? null,
-          emotion_hue:    state.emotion?.hue    ?? null,
-          source:         state.source,
-          breath_cycles:  state.breathCycles    ?? 0,
+          'I am felling': state.emotion?.label ?? null,
+          'vb_Anonymous': state.vent,
+          'Owner':        null,
         });
         if (error) throw error;
         setState(s => ({ ...s, lastRoute: 'submitting', route: 'thanks', submitError: null }));
