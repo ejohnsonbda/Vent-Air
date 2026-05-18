@@ -24,6 +24,181 @@ ejohnsonbda/Vent-Air (GitHub Pages)
 
 ---
 
+## Visual Design & Layout System
+
+### Design Tokens
+
+Every color, shadow, radius, and font is defined as a CSS custom property in `:root` and shared across both files. Changing `--accent` in one place recolors every button, badge, glow, and highlight.
+
+```css
+:root {
+  /* Brand */
+  --accent:       #F47B20;          /* VENT orange */
+  --accent-soft:  rgba(244,123,32,.14);
+  --accent-line:  rgba(244,123,32,.45);
+  --accent-glow:  rgba(244,123,32,.22);
+
+  /* Backgrounds — layered dark surfaces */
+  --bg:           #0B0B0B;          /* page background */
+  --surface-1:    #141414;          /* lowest card level */
+  --surface-2:    #1a1a1a;          /* main card */
+  --surface-3:    #1f1f1f;          /* hover state */
+  --surface-4:    #262626;          /* deepest element */
+
+  /* Text */
+  --text:          rgba(255,255,255,0.94);
+  --text-secondary:rgba(255,255,255,0.6);
+  --text-muted:    rgba(255,255,255,0.42);
+  --text-faint:    rgba(255,255,255,0.28);
+
+  /* Borders */
+  --line:          rgba(255,255,255,0.08);
+  --line-strong:   rgba(255,255,255,0.16);
+  --line-hover:    rgba(244,123,32,0.4);
+
+  /* Shape */
+  --radius-xs: 2px;   --radius-sm: 4px;
+  --radius-md: 6px;   --radius-lg: 8px;
+
+  /* Elevation */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.4);
+  --shadow-md:  0 8px 24px rgba(0,0,0,.5);
+  --shadow-lg:  0 24px 60px rgba(0,0,0,.55);
+
+  /* Motion */
+  --t: 180ms cubic-bezier(.2,.7,.3,1);
+
+  /* Typography */
+  --font-display: "Anton", "Oswald", system-ui, sans-serif;
+  --font-body:    "Manrope", system-ui, sans-serif;
+}
+```
+
+### Typography
+
+| Role | Font | Weight | Usage |
+|---|---|---|---|
+| Display / Wordmark | Anton (Google Fonts) | 400 | Screen titles, the VENT logo, stat numbers |
+| Body | Manrope (Google Fonts) | 400–800 | All prose, labels, buttons, filters |
+| Eyebrow labels | Manrope | 700 | Uppercase spaced-out section labels |
+
+Anton is a condensed display face that gives VENT its editorial, intense personality. Manrope provides legibility across a wide weight range for UI chrome.
+
+### VENT App Layout (index.html)
+
+```
+┌─────────────────────────────────────┐
+│              viewport               │  position: fixed; inset: 0
+│                                     │
+│   ┌─────────────────────────────┐   │
+│   │                             │   │
+│   │         .app-shell          │   │  Mobile: width 100%, height 100%
+│   │                             │   │  Tablet: 420px × 840px centered
+│   │    ┌─────────────────┐      │   │  Laptop: 420px × 900px centered
+│   │    │  <CurrentScreen>│      │   │
+│   │    └─────────────────┘      │   │
+│   │                             │   │
+│   └─────────────────────────────┘   │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+Each screen occupies the full `.app-shell` height and handles its own internal scroll. Most screens have three zones:
+
+```
+┌────────────────────────┐
+│   Top bar / wordmark   │  ~64–80px — logo, back button
+├────────────────────────┤
+│                        │
+│      Scroll body       │  flex: 1; overflow-y: auto
+│                        │
+├────────────────────────┤
+│    Action / button     │  fixed at bottom of shell, above home indicator
+└────────────────────────┘
+```
+
+Safe-area insets are applied so content is never hidden behind the iOS notch or Android status bar:
+
+```css
+padding-top:    env(safe-area-inset-top);
+padding-bottom: env(safe-area-inset-bottom);
+```
+
+### Screen-by-Screen Layout Details
+
+| Screen | Layout pattern | Key elements |
+|---|---|---|
+| **Welcome** | Full-bleed centered hero | Large "VENT" wordmark, tagline, single CTA button |
+| **Emotion** | Sticky category tabs + scrollable grid | 84 feeling chips in a 3-column grid; list/grid toggle |
+| **Vent** | Flex column | Feeling recap chip, growing textarea (min 120px), char count |
+| **Review** | Card with two sections | Emotion badge on top, vent text body, two action buttons |
+| **Submitting** | Centered full-screen | Spinner animation + "Sending…" label; error state shows message + retry |
+| **Thanks** | Centered celebration | Large checkmark, gratitude copy, auto-advance timer |
+| **Breathe** | Animated circle | Expanding/contracting ring with 4-7-8 inhale/hold/exhale phases |
+| **Support** | Scrollable link list | Resource cards with name, description, and phone/web link |
+| **Privacy** | Scrollable prose | Policy text with section headings |
+
+### Admin Portal Layout (portal.html)
+
+The portal is a traditional top-to-bottom document layout (no fixed-height shell):
+
+```
+┌──────────────────────────────────────────────────────┐
+│  HEADER (sticky, blur backdrop)                      │
+│  Logo · "Console v2.4" tag · Stats · Logout          │
+├──────────────────────────────────────────────────────┤
+│  HERO SECTION                                        │
+│  Live badge · Title · Description · Warning banner   │
+│  ┌──────────────────────────┐                        │
+│  │  Search input            │                        │
+│  └──────────────────────────┘                        │
+├──────────────────────────────────────────────────────┤
+│  FILTERS BAR (surface-1 background)                  │
+│  Feeling ▾  Year ▾  From [date]  To [date]  Sort ▾  Reset │
+│  Quick year pills: 2023 · 2024 · 2025 · 2026 · All  │
+│  Chips: Showing 42 · Total 4,656 · Feelings 84      │
+├──────────────────────────────────────────────────────┤
+│  CARDS GRID  (max-width 1280px, 32px padding)        │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐           │
+│  │  Card    │  │  Card    │  │  Card    │  3 cols    │
+│  │ Feeling  │  │ Feeling  │  │ Feeling  │  desktop   │
+│  │ Created  │  │ Created  │  │ Created  │            │
+│  │ Snippet  │  │ Snippet  │  │ Snippet  │            │
+│  └──────────┘  └──────────┘  └──────────┘           │
+│   (→ 2 cols at 1024px, → 1 col at 640px)            │
+├──────────────────────────────────────────────────────┤
+│  FOOTER BAR (fixed, blur backdrop)                   │
+│  "Click any card to open details"  ·  Dashboard →   │
+└──────────────────────────────────────────────────────┘
+```
+
+**Card anatomy:**
+
+```
+┌─────────────────────────────────────┐
+│ [● ANXIETY]            [ID: abc123] │  card-hdr: feeling badge + ID tag
+├─────────────────────────────────────┤
+│ Created  May 17, 2025  Owner  76f…  │  card-meta: dark tinted row
+├─────────────────────────────────────┤
+│ Heart pounding for no clear reason. │
+│ Again. Trying to remember that it   │  card-body: 4-line clamped snippet
+│ always passes but right now it      │
+│ feels permanent.                    │
+└─────────────────────────────────────┘
+```
+
+### Responsive Breakpoints
+
+| Breakpoint | App behavior | Portal behavior |
+|---|---|---|
+| < 400px | Full-screen shell | Filters stack to 1 column |
+| 400–600px | Full-screen shell | Filters stack to 2 columns |
+| 600–640px | Full-screen shell | Filters at 3 columns |
+| 640–1024px | 420×840px centered shell | Cards at 2 columns |
+| ≥ 1024px | 420×900px centered shell | Cards at 3 columns |
+
+---
+
 ## Front End — The VENT App (`index.html`)
 
 ### Technology Stack
@@ -37,22 +212,6 @@ ejohnsonbda/Vent-Air (GitHub Pages)
 | Hosting | GitHub Pages | Free, zero-config static hosting |
 
 All scripts are loaded from CDN — the file is fully self-contained and works offline after first load via the browser cache.
-
-### App Shell Layout
-
-The app uses a single `#root` div that fills the entire viewport:
-
-```
-#root  (position: fixed; inset: 0)
-  └── .app-shell
-        └── <CurrentScreen />
-```
-
-`.app-shell` is a CSS-only responsive container:
-
-- **Mobile (< 640px):** fills the full screen — `width: 100%; height: 100%;` — respects safe-area insets for notches and home indicators
-- **Tablet (≥ 640px):** centers a 420 × 840px column with rounded corners and a box shadow, like a phone on a desk
-- **Laptop (≥ 1024px):** same column, slightly taller (900px max)
 
 ### State Machine
 
@@ -186,7 +345,7 @@ async function loadCredentials() {
 
 On successful login, `sessionStorage` is written so refreshing the page skips the login form. Logout clears `sessionStorage` and shows the form again.
 
-> **Note:** This is a client-side credential check only. It is not a replacement for true server-side authentication — it prevents casual access but is not cryptographically secure. The anon key in the source can be seen by anyone who views page source.
+> **Note:** This is a client-side credential check only. It prevents casual access but is not cryptographically secure. The anon key in the source can be seen by anyone who views page source.
 
 ### Data Loading
 
@@ -205,7 +364,7 @@ async function loadData() {
 }
 ```
 
-If Supabase is unreachable (no SELECT policy, network error, etc.), it falls back to six built-in sample records so the UI is never blank.
+If Supabase is unreachable, it falls back to six built-in sample records so the UI is never blank.
 
 ### Real-Time Updates
 
@@ -285,7 +444,7 @@ Supabase Real-Time uses PostgreSQL's `LISTEN / NOTIFY` under the hood. The porta
 
 ### API Access
 
-Both the app and portal use the **anon (public) key**. This key is safe to ship in client-side code because RLS policies restrict what it can actually do. The key cannot bypass RLS; only the service-role key (never in client code) can do that.
+Both the app and portal use the **anon (public) key**. This key is safe to ship in client-side code because RLS policies restrict what it can actually do.
 
 | Key type | Used in | Can do |
 |---|---|---|
@@ -347,16 +506,237 @@ subscribeRealtime() → WebSocket channel open
 
 ---
 
-## Deployment
+## Launching Both Sites from GitHub
 
-The repo is deployed via **GitHub Pages** from the `main` branch root.
+### How GitHub Pages Works
 
-| URL | File |
+GitHub Pages reads the `main` branch of the repository and serves every file as a static website. No server configuration, no deployment pipeline — just push a file and it's live within ~30 seconds.
+
+The VENT repo (`ejohnsonbda/Vent-Air`) serves two URLs from the same codebase:
+
+| Site | URL | File |
+|---|---|---|
+| VENT App (user-facing) | `https://ejohnsonbda.github.io/Vent-Air/` | `index.html` |
+| Admin Portal | `https://ejohnsonbda.github.io/Vent-Air/portal.html` | `portal.html` |
+
+### Enabling GitHub Pages (First Time)
+
+If GitHub Pages is not yet enabled on the repo:
+
+1. Go to `github.com/ejohnsonbda/Vent-Air`
+2. Click **Settings** (top tab)
+3. Scroll to **Pages** in the left sidebar
+4. Under **Source**, select **Deploy from a branch**
+5. Branch: **main** · Folder: **/ (root)**
+6. Click **Save**
+
+GitHub will show a green banner with the live URL within a minute.
+
+### Publishing an Update
+
+Every change to the codebase is deployed by pushing to `main`:
+
+```bash
+# Edit a file, then:
+git add index.html          # or portal.html, manifest.json, etc.
+git commit -m "Describe the change"
+git push origin main
+```
+
+GitHub Pages detects the push automatically and redeploys. No manual deploy step is needed.
+
+### Sharing Each Site
+
+- **VENT app** — share `https://ejohnsonbda.github.io/Vent-Air/` with users. On mobile, they can tap "Add to Home Screen" to install it as a PWA icon on their phone.
+- **Admin portal** — share `https://ejohnsonbda.github.io/Vent-Air/portal.html` only with authorized staff. The login screen protects casual access.
+
+### Custom Domain (Optional)
+
+To use a custom domain (e.g., `ventapp.com`) instead of the `github.io` URL:
+
+1. Buy the domain from any registrar (Namecheap, Cloudflare, etc.)
+2. In the registrar's DNS settings, add a CNAME record: `www → ejohnsonbda.github.io`
+3. In GitHub → Settings → Pages → Custom domain, enter `www.ventapp.com`
+4. Check **Enforce HTTPS**
+5. Create a file named `CNAME` in the repo root containing just `www.ventapp.com`
+
+The PWA manifest, Supabase API calls, and all links will continue to work because GitHub Pages rewrites all traffic through the custom domain.
+
+---
+
+## Publishing to App Stores
+
+VENT is built as a PWA, which means it can be submitted to both the Google Play Store and the Apple App Store without rewriting the app in Swift or Kotlin. The approach packages the existing web app in a thin native wrapper.
+
+### Prerequisites (Both Stores)
+
+Before submitting to either store, the following must be in place:
+
+| Requirement | Status | Notes |
+|---|---|---|
+| HTTPS hosting | ✅ Done | GitHub Pages provides free HTTPS |
+| `manifest.json` | ✅ Done | Already configured |
+| App icons (192px, 512px) | ✅ Done | In `/icons/` folder |
+| Service Worker | ⚠️ Not yet | Required for Play Store TWA; strongly recommended for App Store |
+| Privacy Policy URL | ⚠️ Needed | Both stores require a public privacy policy page |
+
+**Adding a service worker** (needed before store submission):
+
+Create `sw.js` in the repo root:
+
+```js
+const CACHE = 'vent-v1';
+const ASSETS = ['/', '/index.html', '/manifest.json'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+});
+```
+
+Register it in `index.html` just before `</body>`:
+
+```html
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/Vent-Air/sw.js');
+  }
+</script>
+```
+
+---
+
+### Google Play Store — Trusted Web Activity (TWA)
+
+A **Trusted Web Activity** lets a PWA run in Chrome with no browser UI, indistinguishable from a native app. It is the official Google-supported method for publishing PWAs on Play.
+
+#### Option A — PWABuilder (Easiest, No Code)
+
+[PWABuilder](https://www.pwabuilder.com) is a free Microsoft tool that generates the Android project for you.
+
+1. Go to **pwabuilder.com** and enter `https://ejohnsonbda.github.io/Vent-Air/`
+2. PWABuilder scans your manifest and service worker and shows a score
+3. Click **Package for Stores** → **Google Play**
+4. Fill in:
+   - Package name: `com.ventapp.vent` (or similar)
+   - App version: `1`
+   - Signing key: generate a new one and **save the keystore file** — you need it for every future update
+5. Download the generated `.aab` (Android App Bundle) file
+6. Go to **play.google.com/console**, create a new app
+7. Upload the `.aab` under **Production → Create new release**
+8. Fill in store listing (description, screenshots, content rating)
+9. Submit for review (~3 business days for new apps)
+
+#### Option B — Bubblewrap CLI (More Control)
+
+```bash
+npm install -g @bubblewrap/cli
+bubblewrap init --manifest https://ejohnsonbda.github.io/Vent-Air/manifest.json
+bubblewrap build
+```
+
+This generates a signed `.aab` ready for Play Console.
+
+#### Digital Asset Links (Required for TWA)
+
+The Play Store TWA verifies ownership of the domain. You must host a file at:
+
+```
+https://ejohnsonbda.github.io/Vent-Air/.well-known/assetlinks.json
+```
+
+PWABuilder generates this file for you. Add it to the repo at `.well-known/assetlinks.json`:
+
+```json
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.ventapp.vent",
+    "sha256_cert_fingerprints": ["YOUR_SIGNING_KEY_FINGERPRINT"]
+  }
+}]
+```
+
+---
+
+### Apple App Store
+
+Apple does not support TWA. The options for getting VENT into the App Store are:
+
+#### Option A — PWABuilder (Easiest)
+
+PWABuilder also generates an iOS/macOS package using a `WKWebView` wrapper:
+
+1. Go to **pwabuilder.com** → enter the VENT URL → **Package for Stores** → **iOS**
+2. Fill in App Name, Bundle ID (`com.ventapp.vent`), version
+3. Download the generated Xcode project (`.zip`)
+4. Open in **Xcode** (requires a Mac)
+5. Set your **Apple Developer Team** in the project settings
+6. Archive the app: **Product → Archive**
+7. Upload to App Store Connect via **Organizer → Distribute App**
+8. In App Store Connect, fill in:
+   - App description, keywords, screenshots (required sizes: 6.5", 5.5", iPad 12.9")
+   - Privacy policy URL (mandatory)
+   - Age rating
+9. Submit for review (~1–3 business days)
+
+#### Option B — Capacitor (Recommended for Future Native Features)
+
+[Capacitor](https://capacitorjs.com) wraps the web app but also gives access to native iOS APIs (camera, push notifications, haptics, etc.) if needed later.
+
+```bash
+npm install @capacitor/core @capacitor/cli @capacitor/ios
+npx cap init VENT com.ventapp.vent
+npx cap add ios
+npx cap copy
+npx cap open ios   # Opens Xcode
+```
+
+Then archive and submit from Xcode as above.
+
+#### App Store Requirements Checklist
+
+| Requirement | Notes |
 |---|---|
-| `https://ejohnsonbda.github.io/Vent-Air/` | `index.html` — the VENT app |
-| `https://ejohnsonbda.github.io/Vent-Air/portal.html` | Admin portal |
+| Apple Developer Account | $99/year at developer.apple.com |
+| Mac with Xcode | Required for building and uploading iOS apps |
+| App icons (all sizes) | Xcode accepts a 1024×1024 PNG and generates all sizes |
+| Privacy policy URL | Must be a live public web page |
+| Screenshots | At minimum: one 6.5-inch (iPhone 14 Pro Max) and one 5.5-inch |
+| Content rating | VENT should rate 12+ (emotional content) |
+| App description | Explain the anonymous venting concept clearly |
 
-Every `git push origin main` automatically deploys within ~30 seconds. There is no CI pipeline or build step — GitHub Pages serves the files as-is.
+---
+
+### Store Listing Copy (Suggested)
+
+**Name:** VENT
+
+**Short description (Play Store, 80 chars):**
+`A safe, anonymous space to set it down. No account. No trace.`
+
+**Full description:**
+```
+Sometimes you just need to get it out.
+
+VENT is a private, anonymous space to express whatever you're feeling — 
+without judgment, without an account, and without a trace.
+
+Pick how you're feeling from 84 emotions, write freely, and let it go. 
+Your words are stored anonymously with no connection to your identity.
+
+After you vent, VENT guides you through an optional breathing exercise 
+and connects you with mental health resources if you need them.
+
+• 100% anonymous — no account, no email, no name
+• 84 emotions across 8 categories  
+• 4-7-8 guided breathing after each vent
+• Mental health resource links
+• Works offline after first load
+```
 
 ---
 
@@ -386,3 +766,5 @@ The hardcoded fallback `admin / 8804114` is always active regardless of `passcor
 | Change portal password | `passcore.json` in repo root |
 | Modify the database schema | Supabase SQL Editor + update insert/select queries in both HTML files |
 | Add a new column | Supabase SQL Editor `ALTER TABLE`, then update the `insert()` call in `index.html` and `renderGrid()` / `openDetail()` in `portal.html` |
+| Update the live site | `git add` → `git commit` → `git push origin main` |
+| Add service worker | Create `sw.js` in repo root, register in `index.html` |
