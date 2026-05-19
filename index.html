@@ -205,6 +205,10 @@
     from { transform: translate(0, 0); }
     to   { transform: translate(40%, -10%); }
   }
+  @keyframes touchSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
 </style>
 </head>
 <body>
@@ -624,6 +628,7 @@ function WelcomeScreen({ ctx }) {
         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10, marginTop: 36, animation: 'ventRise 900ms 280ms cubic-bezier(.2,.7,.3,1) both' }}>
           <VButton full variant="primary" onClick={() => ctx.go('emotion')}>Vent</VButton>
           <VButton full variant="outline" onClick={() => ctx.go('breathe')}>Breathe</VButton>
+          <VButton full variant="outline" onClick={() => ctx.go('touch')}>Touch</VButton>
           <button onClick={() => ctx.go('privacy')} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: t.muted, fontFamily: '"Manrope", system-ui', fontSize: 12, letterSpacing: '0.18em', textTransform: 'uppercase', padding: '16px', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
             How privacy works
           </button>
@@ -1042,6 +1047,351 @@ function BreathScreen({ ctx }) {
   );
 }
 
+// ─── touch pool ──────────────────────────────────────────
+
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+function hslToRgb(h, s, l) {
+  h = ((h % 360) + 360) % 360 / 360;
+  let r, g, b;
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1 / 6) return p + (q - p) * 6 * t;
+      if (t < 1 / 2) return q;
+      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+      return p;
+    };
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1 / 3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1 / 3);
+  }
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function hexToHueDeg(hex) {
+  const [r, g, b] = hexToRgb(hex).map(v => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  if (d === 0) return 0;
+  let h;
+  if (max === r) h = ((g - b) / d) % 6;
+  else if (max === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  h *= 60;
+  return h < 0 ? h + 360 : h;
+}
+
+const TOUCH_COLOR_MODES = ['off', 'slow', 'pulse'];
+const TOUCH_MODE_LABEL = { off: 'Off', slow: 'Drift', pulse: 'Pulse' };
+
+function ColorModeDot({ mode, accent }) {
+  const base = {
+    display: 'inline-block',
+    width: 8,
+    height: 8,
+    borderRadius: '50%',
+    flexShrink: 0,
+  };
+  if (mode === 'off') {
+    return <span style={{ ...base, background: accent, boxShadow: `0 0 6px ${accent}` }} />;
+  }
+  if (mode === 'slow') {
+    return <span style={{ ...base, background: 'conic-gradient(from 0deg, #ff5b5b, #f4d04b, #4be07a, #4bc9f4, #b06bff, #ff5b5b)', boxShadow: '0 0 6px rgba(255,255,255,0.4)', animation: 'touchSpin 4s linear infinite' }} />;
+  }
+  return <span style={{ ...base, background: 'linear-gradient(135deg, #ff5b5b, #b06bff)', boxShadow: '0 0 6px rgba(255,255,255,0.5)' }} />;
+}
+
+function addDropToField(field, W, x, y, strength) {
+  const radius = 2.4;
+  const xi = Math.round(x);
+  const yi = Math.round(y);
+  for (let dy = -radius | 0; dy <= radius; dy++) {
+    for (let dx = -radius | 0; dx <= radius; dx++) {
+      const px = xi + dx;
+      const py = yi + dy;
+      if (px < 1 || py < 1 || px >= W - 1) continue;
+      const i = py * W + px;
+      if (i < 0 || i >= field.length) continue;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d > radius) continue;
+      const weight = 1 - d / radius;
+      field[i] += strength * weight * weight;
+    }
+  }
+}
+
+function TouchScreen({ ctx }) {
+  const t = THEME;
+  const canvasRef = useRef(null);
+  const rafRef = useRef(null);
+  const [touched, setTouched] = useState(false);
+  const [colorMode, setColorMode] = useState('off');
+  const stateRef = useRef({
+    W: 64,
+    H: 144,
+    cur: null,
+    prev: null,
+    pointerDown: false,
+    lastX: -1,
+    lastY: -1,
+    accentRgb: hexToRgb(t.accent),
+    nextAmbientAt: 1500,
+    startedAt: 0,
+    lastFrameAt: 0,
+    hue: hexToHueDeg(t.accent),
+    colorMode: 'off',
+  });
+
+  useEffect(() => {
+    const s = stateRef.current;
+    if (s.colorMode === 'off') s.accentRgb = hexToRgb(t.accent);
+    s.hue = hexToHueDeg(t.accent);
+  }, [t.accent]);
+
+  useEffect(() => {
+    const s = stateRef.current;
+    s.colorMode = colorMode;
+    if (colorMode === 'off') s.accentRgb = hexToRgb(t.accent);
+  }, [colorMode, t.accent]);
+
+  useEffect(() => {
+    const s = stateRef.current;
+    s.cur = new Float32Array(s.W * s.H);
+    s.prev = new Float32Array(s.W * s.H);
+
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    canvas.width = s.W;
+    canvas.height = s.H;
+    const c2d = canvas.getContext('2d');
+    const img = c2d.createImageData(s.W, s.H);
+    const data = img.data;
+
+    s.startedAt = performance.now();
+    s.lastFrameAt = s.startedAt;
+
+    function frame(now) {
+      const dt = (now - s.lastFrameAt) / 1000;
+      s.lastFrameAt = now;
+
+      if (s.colorMode === 'slow') {
+        s.hue = (s.hue + dt * 9) % 360;
+        s.accentRgb = hslToRgb(s.hue, 0.72, 0.55);
+      }
+
+      const W = s.W;
+      const H = s.H;
+      const cur = s.cur;
+      const prev = s.prev;
+
+      for (let y = 1; y < H - 1; y++) {
+        const row = y * W;
+        for (let x = 1; x < W - 1; x++) {
+          const i = row + x;
+          const v = (prev[i - 1] + prev[i + 1] + prev[i - W] + prev[i + W]) * 0.5 - cur[i];
+          cur[i] = v * 0.987;
+        }
+      }
+      s.cur = prev;
+      s.prev = cur;
+
+      const elapsed = now - s.startedAt;
+      if (elapsed > s.nextAmbientAt) {
+        const ax = 6 + Math.floor(Math.random() * (W - 12));
+        const ay = 6 + Math.floor(Math.random() * (H - 12));
+        addDropToField(s.prev, W, ax, ay, 1.2);
+        s.nextAmbientAt = elapsed + 3000 + Math.random() * 2500;
+      }
+
+      const accent = s.accentRgb;
+      const field = s.prev;
+      let px = 0;
+      for (let y = 0; y < H; y++) {
+        const yU = y > 0 ? y - 1 : 0;
+        const yD = y < H - 1 ? y + 1 : H - 1;
+        for (let x = 0; x < W; x++) {
+          const i = y * W + x;
+          const xL = x > 0 ? x - 1 : 0;
+          const xR = x < W - 1 ? x + 1 : W - 1;
+          const dx = field[y * W + xR] - field[y * W + xL];
+          const dy = field[yD * W + x] - field[yU * W + x];
+          const amp = Math.abs(field[i]);
+
+          let r = 6;
+          let g = 6;
+          let b = 8;
+          const tint = Math.min(1, amp * 2.2);
+          r += accent[0] * tint * 0.55;
+          g += accent[1] * tint * 0.40;
+          b += accent[2] * tint * 0.28;
+
+          const light = -(dx * 0.55 + dy * 0.55);
+          const bump = light * 60;
+          r += bump;
+          g += bump * 0.75;
+          b += bump * 0.45;
+
+          const spec = Math.min(1, (Math.abs(dx) + Math.abs(dy)) * 0.45);
+          r += spec * 80;
+          g += spec * 60;
+          b += spec * 35;
+
+          data[px++] = r < 0 ? 0 : r > 255 ? 255 : r;
+          data[px++] = g < 0 ? 0 : g > 255 ? 255 : g;
+          data[px++] = b < 0 ? 0 : b > 255 ? 255 : b;
+          data[px++] = 255;
+        }
+      }
+      c2d.putImageData(img, 0, 0);
+      rafRef.current = requestAnimationFrame(frame);
+    }
+
+    rafRef.current = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  function pointerCoords(e) {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    return [
+      (e.clientX - rect.left) / rect.width * stateRef.current.W,
+      (e.clientY - rect.top) / rect.height * stateRef.current.H,
+    ];
+  }
+
+  function addDrop(x, y, strength = 3) {
+    addDropToField(stateRef.current.prev, stateRef.current.W, x, y, strength);
+  }
+
+  return (
+    <Screen padding={0} style={{ position: 'relative', overflow: 'hidden', background: '#000' }}>
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        <canvas
+          ref={canvasRef}
+          onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId);
+            const s = stateRef.current;
+            s.pointerDown = true;
+            const [x, y] = pointerCoords(e);
+            s.lastX = x;
+            s.lastY = y;
+            if (s.colorMode === 'pulse') {
+              s.hue = (s.hue + 35) % 360;
+              s.accentRgb = hslToRgb(s.hue, 0.72, 0.55);
+            }
+            addDrop(x, y, 4.2);
+            if (!touched) setTouched(true);
+          }}
+          onPointerMove={(e) => {
+            const s = stateRef.current;
+            if (!s.pointerDown) return;
+            const [x, y] = pointerCoords(e);
+            const dx = x - s.lastX;
+            const dy = y - s.lastY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const steps = Math.max(1, Math.floor(dist * 1.2));
+            const stepStrength = Math.max(0.8, 2.5 - dist * 0.05);
+            for (let i = 1; i <= steps; i++) {
+              const tt = i / steps;
+              addDrop(s.lastX + dx * tt, s.lastY + dy * tt, stepStrength);
+            }
+            s.lastX = x;
+            s.lastY = y;
+          }}
+          onPointerUp={() => { stateRef.current.pointerDown = false; }}
+          onPointerCancel={() => { stateRef.current.pointerDown = false; }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            imageRendering: 'auto',
+            touchAction: 'none',
+            filter: 'blur(1.6px) brightness(1.08) contrast(1.05)',
+            cursor: 'crosshair',
+          }}
+        />
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: 'inset 0 0 120px 30px rgba(0,0,0,0.85)' }} />
+      </div>
+
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '24px 24px 0', zIndex: 5, pointerEvents: 'none' }}>
+        <div style={{ pointerEvents: 'auto' }}>
+          <TopBar onBack={() => ctx.go(ctx.state.lastRoute || 'welcome')} />
+        </div>
+        <div style={{ fontFamily: '"Anton", system-ui', fontSize: 36, color: '#fff', letterSpacing: '0.02em', lineHeight: 1, textTransform: 'uppercase', mixBlendMode: 'difference' }}>Touch.</div>
+        <div style={{ fontFamily: '"Manrope", system-ui', fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 8, letterSpacing: '0.32em', textTransform: 'uppercase', fontWeight: 700, mixBlendMode: 'difference' }}>Glide your finger across the water</div>
+      </div>
+
+      <button
+        onClick={() => {
+          const i = TOUCH_COLOR_MODES.indexOf(colorMode);
+          setColorMode(TOUCH_COLOR_MODES[(i + 1) % TOUCH_COLOR_MODES.length]);
+        }}
+        style={{
+          position: 'absolute',
+          bottom: 22,
+          right: 18,
+          zIndex: 6,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '8px 12px 8px 10px',
+          background: 'rgba(0,0,0,0.55)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255,255,255,0.16)',
+          borderRadius: 999,
+          color: '#fff',
+          fontFamily: '"Manrope", system-ui',
+          fontSize: 10,
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          fontWeight: 700,
+          cursor: 'pointer',
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'manipulation',
+        }}
+      >
+        <ColorModeDot mode={colorMode} accent={t.accent} />
+        Color · <span style={{ color: 'rgba(255,255,255,0.7)' }}>{TOUCH_MODE_LABEL[colorMode]}</span>
+      </button>
+
+      <div style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 28,
+        textAlign: 'center',
+        pointerEvents: 'none',
+        zIndex: 5,
+        fontFamily: '"Manrope", system-ui',
+        fontSize: 11,
+        color: 'rgba(255,255,255,0.5)',
+        letterSpacing: '0.32em',
+        textTransform: 'uppercase',
+        fontWeight: 600,
+        opacity: touched ? 0 : 1,
+        transition: 'opacity 800ms ease',
+        mixBlendMode: 'difference',
+      }}>
+        — Anywhere on the surface —
+      </div>
+    </Screen>
+  );
+}
+
+
 // ─── app ─────────────────────────────────────────────────
 
 function App() {
@@ -1091,6 +1441,7 @@ function App() {
     support:    <SupportScreen ctx={ctx} />,
     privacy:    <PrivacyScreen ctx={ctx} />,
     breathe:    <BreathScreen ctx={ctx} />,
+    touch:      <TouchScreen ctx={ctx} />,
   };
 
   return (
