@@ -847,7 +847,7 @@ function PrivacyScreen({ ctx }) {
   const points = [
     { h: 'Anonymous by default',    b: 'No account, no email, no name. We never ask.' },
     { h: 'No device fingerprinting',b: 'Your submission carries no identifier that links back to you.' },
-    { h: 'Stored, then forgotten',  b: 'Vents are kept securely for trend analysis only — never republished, never sold.' },
+    { h: 'Stored, then forgotten',  b: 'Vents are kept securely for trend analysis only, never republished, never sold.' },
     { h: 'Crisis is different',     b: 'If a vent suggests immediate danger, we surface resources. We do not contact authorities.' },
   ];
   const communityRules = {
@@ -864,13 +864,253 @@ function PrivacyScreen({ ctx }) {
       'Using Vent to threaten, harass, or incite harm',
     ],
   };
+  const policySections = [
+    {
+      title: '1. Our Commitment to Privacy & Safety',
+      blocks: [
+        { type: 'p', text: 'VENT is a private, anonymous platform for emotional release. We are not social media. We have no profiles, likes, comments, or social scoring.' },
+        { type: 'p', text: 'Our core promise: What you share stays anonymous. We do not sell, trade, or rent your personal information.' },
+        { type: 'p', text: 'This policy explains how we protect all users, including special safeguards for children under 13, and how we comply with GDPR, HIPAA, and PIPEDA where applicable.' },
+      ],
+    },
+    {
+      title: '2. Information We Collect (Very Limited)',
+      blocks: [
+        { type: 'p', text: 'Because VENT has no profiles, no names, and no login, we collect minimal data:' },
+        { type: 'list', label: 'What We Collect:', items: [
+          'Your Vent Submissions: The text you write when you "Vent." This content is stored anonymously with no IP address, device ID, or timestamp linked to it.',
+          'Aggregate Counters: We count how many submissions are made daily or yearly. These numbers have no individual user data.',
+          'Basic Device Type: Android vs. iOS for app functionality. This is not linked to your vents.',
+        ] },
+        { type: 'list', label: 'What We Do NOT Collect:', items: [
+          'Names, email addresses, phone numbers',
+          'Profile pictures or bios',
+          'Location data (GPS or IP geolocation)',
+          'Contact lists or photos',
+          'Biometric data',
+          'Social media accounts',
+          'Persistent identifiers or cookies',
+        ] },
+      ],
+    },
+    {
+      title: '3. Special Protections for Users Under 13',
+      blocks: [
+        { type: 'p', text: 'We take the safety of young users seriously.' },
+        { type: 'sub', text: 'a. No Registration Equals No Data Collection' },
+        { type: 'p', text: 'Because VENT requires no account creation, email address, or login, we never knowingly collect personal information from children under 13.' },
+        { type: 'sub', text: 'b. No Targeted Content or Advertising' },
+        { type: 'p', text: 'We display no behavioral advertising, personalized recommendations, or algorithm driven feeds.' },
+        { type: 'sub', text: 'c. No Interaction Features' },
+        { type: 'p', text: 'VENT has no comments, no likes, no direct messages, no friend lists, and no public profiles. Children cannot be contacted by strangers.' },
+        { type: 'sub', text: 'd. Parental Rights' },
+        { type: 'p', text: 'If a parent or guardian believes their child under 13 has accidentally included personal data in a vent, they may contact us at info@umindesign.com. We will remove that specific vent submission upon verification.' },
+        { type: 'sub', text: "e. No Sale of Children's Data" },
+        { type: 'p', text: 'We never sell or use any data potentially associated with users under 13.' },
+      ],
+    },
+    {
+      title: '4. GDPR Compliance (European Union)',
+      blocks: [
+        { type: 'p', text: 'The General Data Protection Regulation (GDPR) gives EU residents specific rights over their personal data. VENT complies as follows:' },
+        { type: 'table', headers: ['GDPR Requirement', 'How VENT Complies'], rows: [
+          ['Lawful basis for processing', 'We process anonymous vent text under legitimate interest (emotional well being) and consent (using the app implies agreement).'],
+          ['Right to access', 'You may request a copy of your data. Because we store no identifiers, we will confirm we have no personal data linked to you.'],
+          ['Right to erasure (right to be forgotten)', 'You may request deletion. Since vents are anonymous, we cannot link a specific vent to you without additional info you provide. We will delete any data you identify.'],
+          ['Right to data portability', 'Not applicable as we store no structured personal data about you.'],
+          ['Right to object', 'You may object to aggregate review. Contact info@umindesign.com.'],
+          ['Data Protection Officer (DPO)', 'Contact info@umindesign.com'],
+          ['Breach notification', 'We will notify authorities and affected users within 72 hours of a breach, though our anonymous design minimizes risk.'],
+        ] },
+        { type: 'p', text: 'Legal basis for processing: Article 6(1)(a) consent and Article 6(1)(f) legitimate interests.' },
+      ],
+    },
+    {
+      title: '5. HIPAA Compliance (United States Health Privacy)',
+      blocks: [
+        { type: 'p', text: 'Important clarification: VENT is not a healthcare provider, not a covered entity, and not a business associate under HIPAA. However, we voluntarily align with HIPAA principles to protect sensitive emotional data.' },
+        { type: 'table', headers: ['HIPAA Principle', 'How VENT Aligns'], rows: [
+          ['Privacy Rule', 'We limit use and disclosure of vent content. No sharing without user agreement.'],
+          ['Security Rule', 'All data encrypted in transit (TLS 1.3) and at rest. Access restricted to authorized personnel only.'],
+          ['Minimum Necessary Standard', 'Mental health professionals see only aggregate patterns, never individual vents.'],
+          ['Business Associate Agreements', 'If we ever hire third party processors, we sign BAAs requiring HIPAA like safeguards.'],
+          ['Breach Notification', 'Users notified within 60 days of any breach of unencrypted data.'],
+        ] },
+        { type: 'p', text: 'What VENT does not do under HIPAA: We do not diagnose, treat, prescribe, or bill for healthcare services. VENT is a wellness tool, not medical advice.' },
+      ],
+    },
+    {
+      title: '6. PIPEDA Compliance (Canada)',
+      blocks: [
+        { type: 'p', text: 'The Personal Information Protection and Electronic Documents Act (PIPEDA) applies to VENT for Canadian users.' },
+        { type: 'table', headers: ['PIPEDA Principle', 'How VENT Complies'], rows: [
+          ['Accountability', 'We are responsible for all data under our control. Contact info@umindesign.com.'],
+          ['Identifying Purposes', 'Purpose is clearly stated: anonymous emotional release and aggregate review for mental health insights.'],
+          ['Consent', 'Using VENT implies implied consent for anonymous collection. No sensitive personal information is collected without consent.'],
+          ['Limiting Collection', 'We collect only the vent text, nothing more.'],
+          ['Limiting Use, Disclosure, Retention', 'Vents used only for release and aggregate review. Never sold. Retained anonymously for 12 months then deleted.'],
+          ['Accuracy', 'Not applicable as we collect no personal identifiers.'],
+          ['Safeguards', 'Strong encryption, access controls, and regular security audits.'],
+          ['Openness', 'This policy is publicly available on ventsafer.org/privacy.'],
+          ['Individual Access', 'Canadian users may request access or correction. Email info@umindesign.com.'],
+          ['Challenging Compliance', 'Users may challenge our compliance and receive a response within 30 days.'],
+        ] },
+        { type: 'p', text: 'PIPEDA complaint process: Contact us at info@umindesign.com. If unresolved, you may contact the Office of the Privacy Commissioner of Canada.' },
+      ],
+    },
+    {
+      title: '7. How Your Vents Are Stored & Protected',
+      blocks: [
+        { type: 'list', items: [
+          'Anonymous by Design: When you submit a vent, the system strips all metadata including time, IP address, and device fingerprint.',
+          'Encryption: Data is encrypted in transit using TLS 1.3 and at rest using AES 256.',
+          'No Tracking: We use no cookies, web beacons, fingerprinting scripts, or third party analytics such as Google Analytics or Facebook Pixel.',
+          'APK Safety: Our direct Android APK is digitally signed and requests zero special permissions including no camera, microphone, contacts, or storage access unless you manually choose to save something locally.',
+        ] },
+      ],
+    },
+    {
+      title: '8. No AI Processing',
+      blocks: [
+        { type: 'p', text: 'VENT does not use artificial intelligence on the backend. We do not train language models on your words. No automated decision making, sentiment analysis, or profiling occurs.' },
+      ],
+    },
+    {
+      title: '9. Sharing Your Information',
+      blocks: [
+        { type: 'p', text: 'We share data only in these limited circumstances:' },
+        { type: 'table', headers: ['Recipient', 'What is shared', 'Why'], rows: [
+          ['Qualified mental health professionals', 'Aggregated, anonymous vent text with no user ID, no timestamp, no IP address', 'To identify emotional trends and improve care strategies'],
+          ['Legal authorities', 'Only if required by a valid court order or to prevent imminent harm', 'To comply with law such as a threat to life'],
+          ['Service providers (hosting)', 'Encrypted, anonymous vent data', 'To store submissions securely'],
+        ] },
+        { type: 'p', text: 'We never share data with advertisers, data brokers, marketers, or social media platforms.' },
+      ],
+    },
+    {
+      title: '10. Aggregate Review by Mental Health Professionals',
+      blocks: [
+        { type: 'p', text: 'As described on our platform: What is shared on Vent may be reviewed in aggregate by qualified mental health professionals to help inform and craft supportive care strategies, always with privacy and respect at the core.' },
+        { type: 'list', label: 'What aggregate means:', items: [
+          'Your individual vent is combined with thousands of others.',
+          'No single vent can be traced back to you or your device.',
+          'Professionals see patterns such as "30 percent of vents mention school stress" but never "Jane, age 14, said X."',
+        ] },
+        { type: 'p', text: 'This review is opt out only. If you do not agree, please do not use VENT. To opt out, contact info@umindesign.com.' },
+      ],
+    },
+    {
+      title: '11. Your Rights Summary Table',
+      blocks: [
+        { type: 'table', headers: ['Right', 'GDPR (EU)', 'HIPAA (US)', 'PIPEDA (Canada)', 'Under 13 Protections'], rows: [
+          ['Access', 'Yes', 'Yes', 'Yes', 'Via parent'],
+          ['Correction', 'Yes', 'Yes', 'Yes', 'Via parent'],
+          ['Deletion', 'Yes', 'Yes', 'Yes', 'Via parent'],
+          ['Opt out of sale', 'Yes (no sale)', 'Yes (no sale)', 'Yes (no sale)', 'Yes (no sale)'],
+          ['Complaint to regulator', 'Yes', 'Yes (HHS)', 'Yes (OPC)', 'Yes'],
+        ] },
+      ],
+    },
+    {
+      title: '12. Data Retention',
+      blocks: [
+        { type: 'list', items: [
+          'Individual vents: Retained in fully anonymous form for 12 months, then permanently deleted.',
+          'Aggregate statistics: Kept indefinitely but contain no user data.',
+          'Backups: Encrypted, time limited, and deleted automatically within 30 days.',
+        ] },
+      ],
+    },
+    {
+      title: '13. International Data Transfers',
+      blocks: [
+        { type: 'p', text: 'VENT is available in over 59 countries. Your anonymous vents may be stored on servers located in the European Union, United States, or Canada depending on your region.' },
+        { type: 'p', text: 'For transfers from the EU to non EU countries, we rely on Standard Contractual Clauses (SCCs) approved by the European Commission. For transfers from Canada, we ensure equivalent protection under PIPEDA.' },
+      ],
+    },
+    {
+      title: '14. Changes to This Privacy Policy',
+      blocks: [
+        { type: 'p', text: 'We will post any changes on this page with an updated Effective Date. For material changes, especially those affecting users under 13 or changing our compliance with GDPR, HIPAA, or PIPEDA, we will notify you via an in app notice or a message on our website at ventsafer.org.' },
+      ],
+    },
+    {
+      title: '15. Contact Information',
+      blocks: [
+        { type: 'p', text: 'All privacy inquiries, parent requests, and compliance matters should be directed to:' },
+        { type: 'p', text: 'Email: info@umindesign.com' },
+        { type: 'list', label: 'Please include one of the following in your subject line for faster processing:', items: [
+          'COPPA Request (for matters involving users under 13)',
+          'GDPR Request (for EU residents)',
+          'HIPAA Inquiry (for US health privacy questions)',
+          'PIPEDA Request (for Canadian residents)',
+          'Opt Out Request (to opt out of aggregate review)',
+        ] },
+        { type: 'p', text: 'Mail Address: VENT Privacy Department. Business mailing address to be provided.' },
+      ],
+    },
+    {
+      title: '16. Legal Disclaimers',
+      blocks: [
+        { type: 'p', text: 'No medical advice. VENT is not a replacement for therapy, medical treatment, or crisis services. If you are in crisis, contact emergency services or a crisis helpline immediately.' },
+        { type: 'p', text: 'No warranty. We provide VENT as is, but we work hard to protect your privacy.' },
+        { type: 'p', text: 'Governing law. This policy and any disputes shall be governed by applicable law, without regard to conflict of law principles.' },
+      ],
+    },
+  ];
+  const baseText = { fontFamily: '"Manrope", system-ui', fontSize: 12.5, color: t.muted, lineHeight: 1.58 };
+  const renderBlock = (block, idx) => {
+    if (block.type === 'p') return <p key={idx} style={{ ...baseText, margin: '10px 0 0' }}>{block.text}</p>;
+    if (block.type === 'sub') return <div key={idx} style={{ marginTop: 14, color: t.text, fontFamily: '"Manrope", system-ui', fontSize: 12, fontWeight: 800, letterSpacing: '0.04em' }}>{block.text}</div>;
+    if (block.type === 'list') return (
+      <div key={idx} style={{ marginTop: 12 }}>
+        {block.label && <div style={{ color: t.text, fontFamily: '"Manrope", system-ui', fontSize: 12, fontWeight: 800, marginBottom: 8 }}>{block.label}</div>}
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: 8 }}>
+          {block.items.map((item, i) => (
+            <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 9, ...baseText }}>
+              <span aria-hidden="true" style={{ marginTop: 8, width: 4, height: 4, borderRadius: '50%', background: t.accent, flexShrink: 0, opacity: 0.9 }} />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+    if (block.type === 'table') return (
+      <div key={idx} style={{ marginTop: 14, overflowX: 'auto', WebkitOverflowScrolling: 'touch', border: `1px solid ${t.line}`, borderRadius: 8 }}>
+        <table style={{ width: '100%', minWidth: block.headers.length > 2 ? 520 : 430, borderCollapse: 'collapse', fontFamily: '"Manrope", system-ui' }}>
+          <thead>
+            <tr>
+              {block.headers.map((h, i) => <th key={i} style={{ padding: '10px 9px', textAlign: 'left', color: t.text, background: `${t.accent}14`, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', borderBottom: `1px solid ${t.line}` }}>{h}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {block.rows.map((row, r) => (
+              <tr key={r}>
+                {row.map((cell, c) => <td key={c} style={{ padding: '10px 9px', verticalAlign: 'top', color: c === 0 ? t.text : t.muted, fontSize: 11.5, lineHeight: 1.45, borderTop: r ? `1px solid ${t.line}` : 'none', fontWeight: c === 0 ? 700 : 500 }}>{cell}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+    return null;
+  };
   return (
     <Screen>
       <TopBar onBack={() => ctx.go(ctx.state.lastRoute || 'welcome')} />
-      <div style={{ fontFamily: '"Anton", system-ui', fontSize: 38, color: t.text, letterSpacing: '0.01em', lineHeight: 1, textTransform: 'uppercase' }}>How privacy<br />works.</div>
-      <div style={{ flex: 1, marginTop: 22, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}>
+      <div style={{ fontFamily: '"Anton", system-ui', fontSize: 38, color: t.text, letterSpacing: '0.01em', lineHeight: 1, textTransform: 'uppercase' }}>Privacy<br />policy.</div>
+      <div style={{ flex: 1, marginTop: 22, overflow: 'auto', WebkitOverflowScrolling: 'touch', paddingRight: 2 }}>
+        <section style={{ padding: '16px 14px', background: `linear-gradient(180deg, ${t.accent}14, ${t.surface})`, border: `1px solid ${t.line}`, borderRadius: 10, boxShadow: '0 18px 50px rgba(0,0,0,0.25)', marginBottom: 14 }}>
+          <div style={{ color: t.text, fontFamily: '"Manrope", system-ui', fontSize: 11, fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase' }}>Privacy Policy for VENT</div>
+          <div style={{ marginTop: 10, display: 'grid', gap: 6, ...baseText }}>
+            <div><strong style={{ color: t.text }}>Effective Date:</strong> May 26, 2026</div>
+            <div><strong style={{ color: t.text }}>App Version:</strong> 3.05</div>
+            <div><strong style={{ color: t.text }}>Platform:</strong> Android (APK) & Web App (iOS Home Screen)</div>
+          </div>
+        </section>
+
         {points.map((p, i) => (
-          <div key={i} style={{ padding: '16px 0', borderBottom: i < points.length - 1 ? `1px solid ${t.line}` : 'none' }}>
+          <div key={i} style={{ padding: '14px 0', borderBottom: i < points.length - 1 ? `1px solid ${t.line}` : 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: t.text, fontFamily: '"Manrope", system-ui', fontSize: 15, fontWeight: 700 }}>
               <span style={{ width: 4, height: 4, borderRadius: 2, background: t.accent, flexShrink: 0 }} />
               {p.h}
@@ -878,6 +1118,7 @@ function PrivacyScreen({ ctx }) {
             <div style={{ color: t.muted, fontFamily: '"Manrope", system-ui', fontSize: 13, lineHeight: 1.55, marginTop: 6, paddingLeft: 14 }}>{p.b}</div>
           </div>
         ))}
+
         <section style={{ marginTop: 22, padding: '18px 16px', background: `linear-gradient(180deg, ${t.accent}12, ${t.surface})`, border: `1px solid ${t.line}`, borderRadius: 10, boxShadow: '0 18px 50px rgba(0,0,0,0.25)' }}>
           <div style={{ fontFamily: '"Anton", system-ui', fontSize: 25, color: t.text, letterSpacing: '0.02em', lineHeight: 1.02, textTransform: 'uppercase' }}>Community Rules:<br />Do’s and Don’ts</div>
           <div style={{ marginTop: 16, display: 'grid', gap: 16 }}>
@@ -905,9 +1146,18 @@ function PrivacyScreen({ ctx }) {
             </div>
           </div>
         </section>
-        <div style={{ padding: '20px 0 40px', fontFamily: '"Manrope", system-ui', fontSize: 11, color: t.muted, letterSpacing: '0.04em' }}>
-          Read the full notice at vent.app/privacy
-        </div>
+
+        {policySections.map((section, i) => (
+          <section key={i} style={{ marginTop: 16, padding: '18px 16px', background: t.surface, border: `1px solid ${t.line}`, borderRadius: 10 }}>
+            <h2 style={{ margin: 0, color: t.text, fontFamily: '"Anton", system-ui', fontSize: 21, lineHeight: 1.08, letterSpacing: '0.01em', textTransform: 'uppercase' }}>{section.title}</h2>
+            <div style={{ marginTop: 10 }}>{section.blocks.map(renderBlock)}</div>
+          </section>
+        ))}
+
+        <section style={{ margin: '16px 0 40px', padding: '18px 16px', background: `${t.accent}10`, border: `1px solid ${t.line}`, borderRadius: 10 }}>
+          <p style={{ ...baseText, margin: 0, color: t.text, fontWeight: 800 }}>Download VENT APK or Add to Home Screen. Your emotions, safely anonymous, across GDPR, HIPAA, and PIPEDA.</p>
+          <p style={{ ...baseText, margin: '10px 0 0' }}>By using VENT, you acknowledge that you have read and understood this Privacy Policy.</p>
+        </section>
       </div>
       <VButton full variant="outline" onClick={() => ctx.go(ctx.state.lastRoute || 'welcome')}>Got it</VButton>
     </Screen>
